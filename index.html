@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendor Reconciliation Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a;
+  --border:#2e3348; --border2:#3a3f5c;
+  --text:#e8eaf0; --text2:#9aa0bc; --text3:#5c6280;
+  --green:#22c55e; --green-bg:#0d2818;
+  --amber:#f59e0b; --amber-bg:#1f1800;
+  --red:#f87171; --red-bg:#2a0f0f;
+  --blue:#60a5fa; --blue-bg:#0d1f3c;
+  --accent:#6366f1; --purple:#a78bfa; --purple-bg:#1e1040;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;color-scheme:dark}
+
+/* topbar */
+.topbar{background:#13151f;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;height:56px;gap:12px}
+.topbar-logo{width:28px;height:28px;background:var(--accent);box-shadow:0 0 12px rgba(99,102,241,.4);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-sub{font-size:13px;color:var(--text3);margin-left:4px}
+
+.main{max-width:980px;margin:0 auto;padding:2rem 1.5rem}
+
+/* stepper */
+.stepper{display:flex;align-items:center;margin-bottom:2rem}
+.step-item{display:flex;align-items:center;gap:8px}
+.step-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:var(--surface2);color:var(--text3);border:1px solid var(--border);transition:all .2s}
+.step-item.active .step-num{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step-item.done .step-num{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.step-label{font-size:13px;color:var(--text3)}
+.step-item.active .step-label{color:var(--text);font-weight:500}
+.step-item.done .step-label{color:var(--green)}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 12px;min-width:30px}
+
+.step{display:none}.step.active{display:block}
+
+/* upload */
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem}
+.upload-box{background:var(--surface);border:1.5px dashed var(--border2);border-radius:12px;padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.upload-box:hover{border-color:var(--accent);background:#1a1d35}
+.upload-box.has-file{border-style:solid;border-color:var(--green);background:#0d2818}
+.upload-icon{font-size:36px;margin-bottom:12px}
+.upload-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.upload-label{font-size:13px;color:var(--text2)}
+.upload-types{font-size:11px;color:var(--text3);background:#13151f;padding:3px 10px;border-radius:20px;display:inline-block;margin-top:8px;border:1px solid var(--border)}
+.file-ok{font-size:12px;color:var(--green);margin-top:8px;font-weight:500;word-break:break-all;padding:0 8px}
+.method-pill{font-size:11px;padding:2px 10px;border-radius:20px;display:inline-block;margin-top:6px}
+.pill-digital{background:var(--green-bg);color:var(--green)}
+.pill-ocr{background:var(--amber-bg);color:var(--amber)}
+.prog-wrap{width:100%;padding:0 8px;margin-top:10px;display:none}
+.prog-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;width:0%;background:var(--accent);transition:width .3s}
+.prog-lbl{font-size:11px;color:var(--text3);margin-top:4px;text-align:center}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.card h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.card p{font-size:12px;color:var(--text2);margin-bottom:12px}
+.note{font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px}
+.note-blue{background:#0d1f3c;color:#93c5fd}
+.note-green{background:#0d2818;color:#4ade80}
+
+/* column rows */
+.col-row{display:grid;grid-template-columns:130px 20px 1fr 100px;align-items:center;gap:10px;margin-bottom:10px}
+.col-row label{font-size:13px;color:var(--text2)}
+.col-row select{width:100%;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface2);color:var(--text)}
+.col-row select:focus{outline:none;border-color:var(--accent)}
+.col-row select:disabled{opacity:.4}
+.arrow{color:var(--text3);font-size:14px;text-align:center}
+.opt-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none;white-space:nowrap}
+.opt-toggle input{accent-color:var(--accent);cursor:pointer}
+
+/* match options */
+.match-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.match-opt{border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s;background:var(--surface)}
+.match-opt:hover{border-color:var(--accent);background:#1a1d35}
+.match-opt.selected{border-color:var(--accent);background:#1e2040}
+.match-opt input[type=radio]{accent-color:var(--accent);margin-right:6px}
+.match-opt-label{font-size:13px;font-weight:600}
+.match-opt-desc{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5}
+
+/* tolerance */
+.tol-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.tol-row label{font-size:13px;font-weight:600;white-space:nowrap}
+.tol-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer;min-width:120px}
+.tol-display{font-size:13px;font-weight:600;min-width:90px;color:var(--accent);font-family:'DM Mono',monospace}
+.tol-note{font-size:12px;color:var(--text3);margin-top:6px}
+
+/* paid status */
+.paid-config{display:none;margin-top:10px;padding:12px;background:#13151f;border-radius:8px;border:1px solid var(--border)}
+.mode-btns{display:flex;gap:8px;margin-bottom:12px}
+.mode-btn{flex:1;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;text-align:center;background:var(--surface2);color:var(--text2);transition:all .15s}
+.mode-btn.active{border-color:var(--accent);background:#eef1fd;color:var(--accent);font-weight:600}
+.paid-lbl{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.paid-input{width:100%;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text)}
+.paid-input:focus{outline:none;border-color:var(--accent)}
+.paid-hint{font-size:11px;color:var(--text3);margin-top:5px}
+
+/* buttons */
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary:hover:not(:disabled){opacity:.9;background:#7c7ef5}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border2);padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
+.btn-secondary:hover{background:var(--surface2)}
+.btn-row{display:flex;gap:10px;align-items:center;margin-top:1.25rem;flex-wrap:wrap}
+.status-txt{font-size:13px;color:var(--text3)}
+
+/* results */
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.25rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.875rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.metric .val{font-size:24px;font-weight:600;margin-bottom:4px}
+.metric .lbl{font-size:11px;color:var(--text2)}
+.c-green{color:var(--green)}.c-red{color:var(--red)}.c-amber{color:var(--amber)}.c-blue{color:var(--blue)}.c-purple{color:var(--purple)}
+
+.out-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
+.out-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.out-card h4{font-size:12px;font-weight:600;margin-bottom:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.out-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px}
+.out-row:last-child{border-bottom:none;padding-top:8px}
+.out-row .lbl{color:var(--text2);font-size:12px}
+.out-row.total .lbl{font-weight:600;color:var(--text);font-size:13px}
+.out-row.total .amt{font-weight:700;font-size:15px}
+
+.diff-banner{border-radius:10px;padding:12px 16px;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.diff-ok{background:#0d2818;color:#4ade80;border:1px solid #166534}
+.diff-warn{background:#1f1800;color:#fbbf24;border:1px solid #92400e}
+.diff-banner .amt{font-weight:700;font-size:15px}
+
+.mode-note{font-size:12px;color:var(--text3);margin-bottom:1rem;background:#13151f;padding:8px 12px;border-radius:8px;border:1px solid var(--border)}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:1rem;overflow-x:auto}
+.tab{padding:9px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);white-space:nowrap;transition:color .15s}
+.tab.active{border-bottom-color:var(--accent);color:var(--accent);font-weight:600}
+.tab.near-tab.active{border-bottom-color:var(--purple);color:var(--purple)}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+th{background:#13151f;padding:9px 12px;font-weight:600;text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)}
+td{padding:9px 12px;border-top:1px solid var(--border);color:var(--text)}
+tr:hover td{background:#1e2235}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.b-match{background:#0d2818;color:#4ade80}
+.b-near{background:#1e1040;color:#c4b5fd}
+.b-diff{background:#1f1800;color:#fbbf24}
+.b-miss{background:#2a0f0f;color:#fca5a5}
+.diff-amt{color:var(--red);font-family:'DM Mono',monospace;font-size:12px}
+.pct-amt{color:var(--purple);font-size:11px;font-family:'DM Mono',monospace}
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
+
+.err{background:#2a0f0f;border-radius:8px;padding:10px 14px;font-size:13px;color:#fca5a5;margin-top:8px;border:1px solid #7f1d1d}
+.preview-box{background:#13151f;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:11px;color:var(--text2);max-height:80px;overflow:hidden;text-align:left;line-height:1.7;word-break:break-all;white-space:pre-wrap;font-family:'DM Mono',monospace}
+
+@media(max-width:640px){
+  .upload-grid,.out-grid,.match-options{grid-template-columns:1fr}
+  .summary-grid{grid-template-columns:repeat(3,1fr)}
+  .col-row{grid-template-columns:110px 18px 1fr 80px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">VR</div>
+  <span class="topbar-title">Vendor Reconciliation</span>
+  <span class="topbar-sub">— all processing is local, nothing leaves your device</span>
+</div>
+
+<div class="main">
+
+<!-- Stepper -->
+<div class="stepper">
+  <div class="step-item active" id="st1"><div class="step-num">1</div><span class="step-label">Upload files</span></div>
+  <div class="step-line"></div>
+  <div class="step-item" id="st2"><div class="step-num">2</div><span class="step-label">Map columns</span></div>
+  <div class="step-line"></div>
+  <div class="step-item" id="st3"><div class="step-num">3</div><span class="step-label">Results & export</span></div>
+</div>
+
+<!-- STEP 1: Upload -->
+<div class="step active" id="step1">
+  <div class="upload-grid">
+    <div class="upload-box" id="box-soa" onclick="document.getElementById('inp-soa').click()">
+      <input type="file" id="inp-soa" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="handleSOA(this)">
+      <div class="upload-icon" id="soa-icon">📄</div>
+      <div class="upload-title">Vendor SOA</div>
+      <div class="upload-label">Click to upload</div>
+      <div class="upload-types">CSV · Excel · PDF (digital or scanned)</div>
+      <div class="file-ok" id="fname-soa"></div>
+      <div class="method-pill" id="soa-badge" style="display:none"></div>
+      <div class="prog-wrap" id="prog-wrap">
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+        <div class="prog-lbl" id="prog-lbl"></div>
+      </div>
+    </div>
+    <div class="upload-box" id="box-ledger" onclick="document.getElementById('inp-ledger').click()">
+      <input type="file" id="inp-ledger" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleLedger(this)">
+      <div class="upload-icon">📋</div>
+      <div class="upload-title">Our Ledger</div>
+      <div class="upload-label">Click to upload</div>
+      <div class="upload-types">CSV · Excel</div>
+      <div class="file-ok" id="fname-ledger"></div>
+    </div>
+  </div>
+  <div id="msg1"></div>
+  <div class="btn-row">
+    <button class="btn-primary" id="btn-next1" onclick="goStep2()" disabled>Next: Map columns →</button>
+    <span class="status-txt" id="status1">Upload both files to continue</span>
+  </div>
+</div>
+
+<!-- STEP 2: Map columns -->
+<div class="step" id="step2">
+  <!-- SOA columns -->
+  <div class="card">
+    <h3>Vendor SOA columns</h3>
+    <div id="soa-note"></div>
+    <div class="col-row">
+      <label>Invoice number</label><span class="arrow">→</span>
+      <select id="soa-inv"></select>
+      <label class="opt-toggle"><input type="checkbox" id="chk-soa-inv" checked onchange="toggleSel('soa-inv',this)"> use this</label>
+    </div>
+    <div class="col-row">
+      <label>Invoice date</label><span class="arrow">→</span>
+      <select id="soa-date"></select>
+      <label class="opt-toggle"><input type="checkbox" id="chk-soa-date" onchange="toggleSel('soa-date',this)"> use this</label>
+    </div>
+    <div class="col-row">
+      <label>Amount</label><span class="arrow">→</span>
+      <select id="soa-amt"></select>
+      <label class="opt-toggle" style="visibility:hidden"><input type="checkbox" checked disabled> always</label>
+    </div>
+    <div class="col-row" id="balance-col-row">
+      <label>Balance column</label><span class="arrow">→</span>
+      <select id="soa-balance" disabled></select>
+      <label class="opt-toggle"><input type="checkbox" id="chk-soa-balance" onchange="toggleSoaBalance(this)"> use this</label>
+    </div>
+    <div id="balance-note" style="display:none" class="note note-green">The last value in this column will be used as the SOA outstanding amount in the summary.</div>
+    <div id="balance-auto-note" style="display:none" class="note note-green">
+      <div style="margin-bottom:8px;font-weight:600;">SOA outstanding (closing balance)</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:12px;">Auto-detected:</span>
+        <input type="number" id="soa-outstanding-override" step="0.01"
+          style="padding:5px 10px;border:1px solid var(--green);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;color:var(--text);width:180px;"
+          placeholder="Enter amount">
+        <span style="font-size:11px;color:var(--green);">← Edit if incorrect</span>
+      </div>
+      <div style="font-size:11px;margin-top:5px;opacity:.8;">This value will be used as total outstanding in the summary. Edit if the auto-detected amount is wrong.</div>
+    </div>
+  </div>
+
+  <!-- Ledger columns -->
+  <div class="card">
+    <h3>Our ledger columns</h3>
+    <div class="col-row">
+      <label>Invoice number</label><span class="arrow">→</span>
+      <select id="led-inv"></select>
+      <label class="opt-toggle"><input type="checkbox" id="chk-led-inv" checked onchange="toggleSel('led-inv',this)"> use this</label>
+    </div>
+    <div class="col-row">
+      <label>Invoice date</label><span class="arrow">→</span>
+      <select id="led-date"></select>
+      <label class="opt-toggle"><input type="checkbox" id="chk-led-date" onchange="toggleSel('led-date',this)"> use this</label>
+    </div>
+    <div class="col-row">
+      <label>Amount</label><span class="arrow">→</span>
+      <select id="led-amt"></select>
+      <label class="opt-toggle" style="visibility:hidden"><input type="checkbox" checked disabled> always</label>
+    </div>
+    <div id="led-amt-type-row" style="margin:-2px 0 10px 150px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:12px;color:var(--text2);cursor:pointer;display:flex;gap:5px;align-items:center;"><input type="radio" name="led-amt-type" value="invoice" checked style="accent-color:var(--accent)"><span>Invoice amount <span style="color:var(--text3)">(all invoices in recon)</span></span></label>
+      <label style="font-size:12px;color:var(--text2);cursor:pointer;display:flex;gap:5px;align-items:center;"><input type="radio" name="led-amt-type" value="unpaid" style="accent-color:var(--accent)"><span>Unpaid amount <span style="color:var(--text3)">(only unpaid rows in recon)</span></span></label>
+    </div>
+    <div class="col-row">
+      <label>Payment status</label><span class="arrow">→</span>
+      <select id="led-status" disabled></select>
+      <label class="opt-toggle"><input type="checkbox" id="chk-led-status" onchange="togglePaidConfig(this)"> use this</label>
+    </div>
+    <!-- Paid config -->
+    <div class="paid-config" id="paid-config">
+      <div class="mode-btns">
+        <div class="mode-btn active" id="mbtn-zero" onclick="setPaidMode('zero')">Unpaid amount = 0</div>
+        <div class="mode-btn" id="mbtn-text" onclick="setPaidMode('text')">Text status column</div>
+      </div>
+      <div id="cfg-zero">
+        <div class="paid-lbl">Which column holds the outstanding / unpaid amount?</div>
+        <select id="zero-col" class="paid-input" style="padding:7px 10px"></select>
+        <div class="paid-hint">Invoices where this column = 0 are treated as <strong>paid</strong>. All others = outstanding.</div>
+      </div>
+      <div id="cfg-text" style="display:none">
+        <div class="paid-lbl">What values mean "Paid"? (comma separated)</div>
+        <input type="text" id="paid-vals" class="paid-input" value="Paid, Cleared, Settled, Yes, Y, 1, P">
+        <div class="paid-hint">Invoices NOT matching these values = outstanding.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOA Outstanding override -->
+  <div class="card" id="soa-out-card">
+    <h3>SOA outstanding amount</h3>
+    <p>Enter the closing balance from the last row of the Balance column in the vendor SOA. This will be used as the total outstanding in the summary.</p>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:13px;color:var(--text2);white-space:nowrap;">Closing balance (₹)</span>
+      <input type="number" id="soa-outstanding-manual" step="0.01" min="0"
+        placeholder="e.g. 242759.70"
+        style="flex:1;min-width:200px;padding:9px 12px;border:1.5px solid var(--accent);border-radius:8px;font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--text);">
+      <span id="soa-out-auto-lbl" style="font-size:12px;color:var(--text3);">Leave blank to calculate from matched records</span>
+    </div>
+    <div id="soa-out-hint" style="font-size:12px;color:var(--text3);margin-top:8px;display:none;"></div>
+  </div>
+
+  <!-- Matching method -->
+  <div class="card">
+    <h3>Matching method</h3>
+    <p>Choose how records from both files should be matched to each other</p>
+    <div class="match-options">
+      <label class="match-opt selected" onclick="setMode('inv',this)">
+        <div><input type="radio" name="mode" checked> <span class="match-opt-label">Invoice number only</span></div>
+        <div class="match-opt-desc">Match on invoice no. Date ignored. Best for most cases.</div>
+      </label>
+      <label class="match-opt" onclick="setMode('inv-date',this)">
+        <div><input type="radio" name="mode"> <span class="match-opt-label">Invoice number + date</span></div>
+        <div class="match-opt-desc">Both must match. Use when invoice nos. repeat across periods.</div>
+      </label>
+      <label class="match-opt" onclick="setMode('amt',this)">
+        <div><input type="radio" name="mode"> <span class="match-opt-label">Amount only</span></div>
+        <div class="match-opt-desc">Match on amount alone. Useful when invoice numbers aren't available.</div>
+      </label>
+      <label class="match-opt" onclick="setMode('amt-date',this)">
+        <div><input type="radio" name="mode"> <span class="match-opt-label">Amount + date</span></div>
+        <div class="match-opt-desc">Good fallback when invoice nos. differ between systems.</div>
+      </label>
+    </div>
+
+    <!-- Tolerance -->
+    <div class="tol-row">
+      <label>Amount tolerance</label>
+      <input type="range" id="tol-slider" min="0" max="5" step="0.1" value="0" oninput="setTolerance(this.value)">
+      <span class="tol-display" id="tol-display">Exact (0%)</span>
+    </div>
+    <div class="tol-note" id="tol-note">Amounts must match exactly. Increase to allow small differences due to rounding, TDS, or GST.</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" onclick="runRecon()">Run reconciliation</button>
+    <button class="btn-secondary" onclick="goStep(1)">← Back</button>
+  </div>
+</div>
+
+<!-- STEP 3: Results -->
+<div class="step" id="step3">
+  <div class="summary-grid">
+    <div class="metric"><div class="val c-green" id="r-matched">0</div><div class="lbl">Matched</div></div>
+    <div class="metric"><div class="val c-purple" id="r-near">0</div><div class="lbl">Near match</div></div>
+    <div class="metric"><div class="val c-amber" id="r-diff">0</div><div class="lbl">Amt mismatch</div></div>
+    <div class="metric"><div class="val c-red" id="r-soa-only">0</div><div class="lbl">Only in SOA</div></div>
+    <div class="metric"><div class="val c-blue" id="r-led-only">0</div><div class="lbl">Only in ledger</div></div>
+  </div>
+
+  <!-- Outstanding panels -->
+  <div class="out-grid">
+    <div class="out-card">
+      <h4>Outstanding — Vendor SOA</h4>
+      <div class="out-row"><span class="lbl">Total invoice value</span><span class="amt" id="o-soa-total">0</span></div>
+      <div class="out-row"><span class="lbl">Matched & agreed</span><span class="amt c-green" id="o-soa-matched">0</span></div>
+      <div class="out-row"><span class="lbl">Amount with difference</span><span class="amt c-amber" id="o-soa-diff">0</span></div>
+      <div class="out-row"><span class="lbl">Not in our ledger</span><span class="amt c-red" id="o-soa-only">0</span></div>
+      <div class="out-row total"><span class="lbl">Total outstanding (SOA)</span><span class="amt c-red" id="o-soa-out">0</span></div>
+    </div>
+    <div class="out-card">
+      <h4>Outstanding — Our Ledger</h4>
+      <div class="out-row"><span class="lbl">Total invoice value</span><span class="amt" id="o-led-total">0</span></div>
+      <div class="out-row"><span class="lbl" id="o-led-lbl1">Matched & agreed</span><span class="amt c-green" id="o-led-r1">0</span></div>
+      <div class="out-row"><span class="lbl" id="o-led-lbl2">Amount with difference</span><span class="amt c-amber" id="o-led-r2">0</span></div>
+      <div class="out-row"><span class="lbl" id="o-led-lbl3">Not in SOA</span><span class="amt c-red" id="o-led-r3">0</span></div>
+      <div class="out-row total"><span class="lbl" id="o-led-lbl4">Total outstanding (Ledger)</span><span class="amt c-red" id="o-led-out">0</span></div>
+    </div>
+  </div>
+
+  <div class="diff-banner" id="diff-banner">
+    <span id="diff-txt"></span><span class="amt" id="diff-amt"></span>
+  </div>
+
+  <div class="mode-note" id="mode-note"></div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('all',this)">All records</div>
+    <div class="tab" onclick="showTab('matched',this)">Matched</div>
+    <div class="tab near-tab" onclick="showTab('near',this)">Near match</div>
+    <div class="tab" onclick="showTab('diff',this)">Amt mismatch</div>
+    <div class="tab" onclick="showTab('soa-only',this)">Only in SOA</div>
+    <div class="tab" onclick="showTab('led-only',this)">Only in ledger</div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Invoice no.</th>
+        <th id="th-soa-date" style="display:none">SOA date</th>
+        <th>SOA amount</th>
+        <th id="th-led-date" style="display:none">Ledger date</th>
+        <th>Ledger amount</th>
+        <th>Difference</th>
+        <th>Diff %</th>
+        <th>Status</th>
+      </tr></thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+  </div>
+
+  <div class="btn-row" style="margin-top:1.5rem">
+    <button class="btn-primary" onclick="exportExcel()">⬇ Export to Excel (with summary)</button>
+    <button class="btn-secondary" onclick="goStep(2)">← Change settings</button>
+    <button class="btn-secondary" onclick="goStep(1)">Start over</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ─── State ─── */
+let soaData=[], ledgerData=[], allResults=[];
+let matchMode='inv', tolerance=0, paidMode='zero', soaIsPdf=false;
+let outStats={};
+
+/* ─── Navigation ─── */
+function goStep(n){
+  document.querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('active',i===n-1));
+  ['st1','st2','st3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.className='step-item'+(i+1===n?' active':i+1<n?' done':'');
+  });
+  window.scrollTo(0,0);
+}
+
+/* ─── Helpers ─── */
+const $=id=>document.getElementById(id);
+const setMsg=(id,html)=>$(id).innerHTML=html;
+const norm=s=>String(s||'').trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+// Convert Excel serial date numbers to YYYY-MM-DD string
+const excelSerialToDate=n=>{
+  // Excel epoch: Dec 30 1899; also handle Lotus 1-2-3 leap-year bug (serial 60 = Feb 29 1900, skip it)
+  if(!n||isNaN(n)||n<1) return '';
+  const d=new Date(Math.round((n-25569)*86400*1000)); // convert to JS timestamp (UTC)
+  const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+};
+const normD=s=>{
+  if(s===null||s===undefined||s==='') return '';
+  // If it's a number (or numeric string) in Excel serial range (>= 1 and <= 99999), convert it
+  const n=Number(s);
+  if(!isNaN(n)&&n>=1&&n<=99999&&String(s).trim()===String(Math.round(n))) return excelSerialToDate(n);
+  // Otherwise normalise as a string date: strip spaces, lowercase
+  return String(s).trim().replace(/\s/g,'').toLowerCase();
+};
+
+// ── Strong invoice normalisation ──────────────────────────────────────────────
+// Step 1 – canonical: strip all separators, lowercase, drop leading zeros per segment
+//   "INV-0045"  → "inv45"   "GRN/2024/001" → "grn202401"  "0023" → "23"
+const normInv=s=>{
+  if(!s) return '';
+  // Split on common separators, strip each segment's leading zeros, rejoin
+  return String(s).trim().toLowerCase()
+    .split(/[\s\-\/\\.,_#]+/)
+    .map(seg=>seg.replace(/^0+(\d)/,'$1'))  // strip leading zeros per segment
+    .join('');
+};
+
+// Step 2 – digits only: strip every non-digit, drop leading zeros
+//   "INV-0045" → "45"   "GRN/2024/001" → "202401"
+const digitsOnly=s=>norm(s).replace(/[a-z]/g,'').replace(/^0+/,'')||'';
+
+// Step 3 – trailing number (the last run of digits, leading-zero-stripped)
+//   "INV-0045" → "45"   "GRN/2024/001" → "1"   "20240123" → "20240123"
+const numSuf=s=>{const m=norm(s).match(/(\d+)$/);return m?m[1].replace(/^0+/,'')||'0':''};
+
+// Step 4 – alpha prefix + trailing number (handles "INV045" vs "045" vs "INV-45")
+//   "INV-045" → {pre:"inv", num:"45"}
+const splitInv=s=>{
+  const c=norm(s); const m=c.match(/^([a-z]*)0*(\d+)[a-z0-9]*$/);
+  return m?{pre:m[1],num:m[2].replace(/^0+/,'')||'0'}:null;
+};
+const toNum=s=>{
+  let v=String(s||'').trim();
+  // Handle Tally-style Dr/Cr suffix: "4,530.75 Dr" → positive, "500.00 Cr" → negative
+  const isCr=/\s*cr\s*$/i.test(v);
+  const isDr=/\s*dr\s*$/i.test(v);
+  v=v.replace(/\s*(dr|cr)\s*$/i,''); // strip Dr/Cr
+  const n=parseFloat(v.replace(/[^0-9.\-]/g,''));
+  if(isNaN(n)) return 0;
+  // Preserve sign from raw value (e.g. -500, credit notes)
+  // Only force sign when Dr/Cr suffix explicitly present
+  if(isDr) return Math.abs(n);   // Dr = positive (debit/charge)
+  if(isCr) return -Math.abs(n);  // Cr = negative (credit/payment)
+  return n; // no suffix — keep sign as-is
+};
+const fmt=n=>Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const setP=(pct,lbl)=>{$('prog-fill').style.width=pct+'%';$('prog-lbl').textContent=lbl;};
+
+/* ─── Ready check ─── */
+function checkReady(){
+  const st=$('status1');
+  if(soaData.length&&ledgerData.length){
+    $('btn-next1').disabled=false;
+    st.textContent='✓ Ready — SOA: '+soaData.length+' rows, Ledger: '+ledgerData.length+' rows';
+    st.style.color='var(--green)'; st.style.fontWeight='500';
+  } else if(soaData.length){
+    st.textContent='SOA loaded — now upload your ledger';
+    st.style.color=''; st.style.fontWeight='';
+  } else if(ledgerData.length){
+    st.textContent='Ledger loaded — now upload the vendor SOA';
+    st.style.color=''; st.style.fontWeight='';
+  }
+}
+
+/* ─── File reading ─── */
+function readFile(file, cb, errCb){
+  const name=file.name.toLowerCase();
+  const reader=new FileReader();
+  reader.onerror=()=>errCb&&errCb('Could not read: '+file.name);
+  reader.onload=e=>{
+    try{
+      let wb;
+      if(name.endsWith('.csv')) wb=XLSX.read(e.target.result,{type:'string'});
+      else wb=XLSX.read(e.target.result,{type:'array'});
+      if(!wb.SheetNames.length){errCb&&errCb('No sheets found.');return;}
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      // ── Smart header detection ──
+      // Many vendor SOA Excel files have company/report header rows before the real data table.
+      // Sheet_to_json reads row 1 as headers by default, giving "__EMPTY" columns.
+      // We scan for the first row that looks like a real table header (has known column keywords)
+      // and re-parse from that row, so columns like Sr.No / Date / Trx# / Total are picked up.
+      let rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(rows.length){
+        const HDR_KWS=['invoice','inv','bill','trx','trxno','trx#','sr','srno','sr.no','date','amount',
+          'total','debit','credit','balance','ref','doc','voucher','document','description','rent','vat',
+          'payment','paid','status','number','no.','outstanding','net','value','qty','narration','particular'];
+        // Check if current headers look like real columns (not company name / metadata)
+        const currentHdrs=Object.keys(rows[0]||{}).map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,''));
+        const emptyCount=currentHdrs.filter(h=>h.startsWith('empty')||h==='').length;
+        const goodHdr=currentHdrs.filter(h=>HDR_KWS.some(k=>h.includes(k))).length;
+        // If too many __EMPTY columns and few real column names → find the real header row
+        if(emptyCount>2||goodHdr<2){
+          // Get raw sheet range
+          const ref=ws['!ref'];
+          if(ref){
+            const range=XLSX.utils.decode_range(ref);
+            let bestRow=-1, bestScore=0;
+            // Scan up to first 30 rows looking for the best header row
+            for(let r=range.s.r;r<=Math.min(range.s.r+30,range.e.r);r++){
+              let score=0;
+              for(let c=range.s.c;c<=range.e.c;c++){
+                const cell=ws[XLSX.utils.encode_cell({r,c})];
+                if(!cell||!cell.v) continue;
+                const cv=String(cell.v).toLowerCase().replace(/[^a-z0-9]/g,'');
+                if(HDR_KWS.some(k=>cv.includes(k))) score++;
+              }
+              if(score>bestScore){bestScore=score;bestRow=r;}
+            }
+            if(bestRow>range.s.r&&bestScore>=2){
+              // Re-parse from the detected header row
+              const newRef=XLSX.utils.encode_range({s:{r:bestRow,c:range.s.c},e:range.e});
+              const wsSlice=Object.assign({},ws,{'!ref':newRef});
+              const reRows=XLSX.utils.sheet_to_json(wsSlice,{defval:''});
+              if(reRows.length) rows=reRows;
+            }
+          }
+        }
+      }
+      if(!rows.length){errCb&&errCb('File is empty or has no data rows.');return;}
+      cb(rows);
+    }catch(ex){errCb&&errCb('Parse error: '+ex.message);}
+  };
+  if(name.endsWith('.csv')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+/* ─── Ledger upload ─── */
+function handleLedger(input){
+  const file=input.files[0]; if(!file)return;
+  $('fname-ledger').textContent='Reading…';
+  readFile(file, rows=>{
+    ledgerData=rows;
+    $('fname-ledger').textContent='✓ '+file.name+' — '+rows.length+' rows';
+    $('box-ledger').classList.add('has-file');
+    setMsg('msg1','');
+    checkReady();
+  }, err=>{
+    ledgerData=[];
+    $('box-ledger').classList.remove('has-file');
+    $('fname-ledger').textContent='';
+    setMsg('msg1','<div class="err">Ledger: '+err+'</div>');
+  });
+}
+
+/* ─── SOA upload ─── */
+async function handleSOA(input){
+  const file=input.files[0]; if(!file)return;
+  setMsg('msg1','');
+  $('fname-soa').textContent=file.name;
+  $('soa-badge').style.display='none';
+  $('box-soa').classList.add('has-file');
+  soaIsPdf=file.name.toLowerCase().endsWith('.pdf');
+  if(soaIsPdf){
+    $('soa-icon').textContent='📑';
+    $('btn-next1').disabled=true;
+    $('status1').textContent='Processing PDF…';
+    $('prog-wrap').style.display='block';
+    try{ await processPDF(file); }
+    catch(e){
+      setMsg('msg1','<div class="err">'+e.message+'</div>');
+      $('prog-wrap').style.display='none';
+      $('status1').textContent='Upload both files to continue';
+      $('status1').style.color='';
+    }
+  } else {
+    $('soa-icon').textContent='📄';
+    $('fname-soa').textContent='Reading…';
+    readFile(file, rows=>{
+      soaData=rows;
+      $('fname-soa').textContent='✓ '+file.name+' — '+rows.length+' rows';
+      setMsg('msg1','');
+      checkReady();
+    }, err=>{
+      soaData=[];
+      $('box-soa').classList.remove('has-file');
+      $('fname-soa').textContent='';
+      setMsg('msg1','<div class="err">SOA: '+err+'</div>');
+    });
+  }
+}
+
+/* ─── PDF processing ─── */
+async function processPDF(file){
+  const ab = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:ab}).promise;
+  const total = pdf.numPages;
+  setP(5, 'Reading PDF…');
+
+  // Collect ALL text items with coordinates across all pages
+  const allItems = [];
+  let pageYBase = 0;
+
+  for(let pg = 1; pg <= total; pg++){
+    const page = await pdf.getPage(pg);
+    const vp   = page.getViewport({scale:1});
+    const tc   = await page.getTextContent({normalizeWhitespace:false});
+    tc.items.forEach(it => {
+      const s = it.str ? it.str.trim() : '';
+      if(!s) return;
+      allItems.push({
+        x:  it.transform[4],
+        y:  pageYBase + (vp.height - it.transform[5]),
+        w:  it.width || 0,
+        h:  it.height || 10,
+        str: s,
+        pg
+      });
+    });
+    pageYBase += vp.height + 100;
+    setP(5 + Math.round(pg/total*30), `Reading page ${pg}/${total}…`);
+  }
+
+  const totalChars = allItems.map(i=>i.str).join('').replace(/\s/g,'').length;
+
+  if(totalChars < 50 * total){
+    // Scanned PDF — OCR
+    setBadge('ocr');
+    const pages = total; // process ALL pages — no cap
+    setP(35, `Scanned PDF — OCR on ${pages} page(s)…`);
+    // Render all pages sequentially to preserve page order
+    const canvases=[];
+    for(let pg=1;pg<=pages;pg++){
+      const page=await pdf.getPage(pg);
+      const vp=page.getViewport({scale:2.0}); // higher scale = better OCR accuracy
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width; canvas.height=vp.height;
+      await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+      canvases.push(canvas);
+      setP(35+Math.round(pg/pages*20),`Rendering page ${pg}/${pages}…`);
+    }
+    // OCR pages sequentially to guarantee page order in output text
+    const W=Math.min(3,pages);
+    const workers=await Promise.all(Array.from({length:W},()=>Tesseract.createWorker('eng',1,{logger:()=>{}})));
+    const texts=new Array(pages).fill('');
+    for(let idx=0;idx<canvases.length;idx++){
+      const {data:{text}}=await workers[idx%W].recognize(canvases[idx]);
+      texts[idx]=text;
+      setP(55+Math.round((idx+1)/pages*35),`OCR: ${idx+1}/${pages}…`);
+    }
+    await Promise.all(workers.map(w=>w.terminate()));
+    const ocrText=texts.join('\n');
+    window._lastRawText=ocrText;
+    setP(92,'Parsing OCR…');
+    const rows=parseText(ocrText,true);
+    setP(100,'Done!');
+    if(!rows.length) throw new Error('OCR done but no rows found.');
+    finishSOA(rows,'ocr',file.name);
+    return;
+  }
+
+  setP(38, 'Matching rows by coordinates…');
+
+  // ── COORDINATE-BASED ROW MATCHING ──
+  // This handles PDFs where columns are stored separately (common in Arabic/RTL ERP PDFs)
+  // Strategy: find invoice code items, then find the closest amount on the same Y level
+
+  // Helper: merge fragments within X-tolerance into tokens
+  function buildTokens(items, xTol){
+    const sorted = [...items].sort((a,b)=>a.x-b.x);
+    const tokens = [];
+    let cur = sorted[0];
+    let curStr = cur.str;
+    let curEndX = cur.x + (cur.w||cur.h*0.5);
+    for(let i=1;i<sorted.length;i++){
+      const it = sorted[i];
+      if(it.x - curEndX < xTol){
+        curStr += it.str;
+        curEndX = Math.max(curEndX, it.x+(it.w||it.h*0.5));
+      } else {
+        tokens.push({str:curStr, x:cur.x, y:cur.y});
+        cur=it; curStr=it.str;
+        curEndX=it.x+(it.w||it.h*0.5);
+      }
+    }
+    tokens.push({str:curStr, x:cur.x, y:cur.y});
+    return tokens;
+  }
+
+  // Group ALL items into Y-bands (rows) with generous tolerance
+  const Y_TOL = 6; // increased from 3 — handles slight Y variance in same-row items
+  const yBands = new Map();
+  for(const it of allItems){
+    const yr = Math.round(it.y / Y_TOL) * Y_TOL;
+    if(!yBands.has(yr)) yBands.set(yr,[]);
+    yBands.get(yr).push(it);
+  }
+
+  // Build tab-separated text from Y-bands (merge nearby fragments)
+  let allText = '';
+  const sortedYs = [...yBands.keys()].sort((a,b)=>a-b);
+  for(const yr of sortedYs){
+    const items = yBands.get(yr);
+    const tokens = buildTokens(items, 15); // 15pt — merges closely spaced fragments into one cell
+    const line = tokens.map(t=>t.str.trim()).filter(Boolean).join('\t');
+    if(line.trim()) allText += line + '\n';
+  }
+
+  // Also build a COORDINATE INDEX for direct matching
+  // Find all C/R code items and their Y positions
+  const codeItems = allItems.filter(it => /^[CR]-\d{4,}$/.test(it.str.trim()) ||
+    /^[CR]-\d{3,}$/.test(it.str.trim()));
+
+  // If no direct code items found, try to find them by merging adjacent items
+  // (C, -, 52024 stored as 3 items)
+  let mergedCodes = [];
+  if(codeItems.length === 0){
+    // Sort by Y then X, look for C/R followed by - followed by digits nearby
+    const byYX = [...allItems].sort((a,b)=>a.y-b.y||a.x-b.x);
+    for(let i=0;i<byYX.length-2;i++){
+      const a=byYX[i], b=byYX[i+1], c=byYX[i+2];
+      if(/^[CR]$/.test(a.str) && b.str==='-' && /^\d{4,}$/.test(c.str) &&
+         Math.abs(a.y-b.y)<4 && Math.abs(b.y-c.y)<4 &&
+         b.x-a.x < 15 && c.x-b.x < 15){
+        mergedCodes.push({str: a.str+'-'+c.str, x:a.x, y:a.y});
+      }
+    }
+  }
+
+  const finalCodeItems = codeItems.length > 0 ? codeItems : mergedCodes;
+  console.log('Code items found by coordinate:', finalCodeItems.length, finalCodeItems.map(c=>c.str));
+
+  // If we found codes by coordinate, do direct Y-matching
+  if(finalCodeItems.length >= 3){
+    // Find all numeric items
+    const numItems = allItems.filter(it => {
+      const n = parseFloat(it.str.replace(/,/g,'').replace(/[()]/g,''));
+      return !isNaN(n) && n > 0 && /^[\d,\.()]+$/.test(it.str.trim());
+    });
+
+    // Find all date items
+    const dateItems = allItems.filter(it => /^(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4}|\d{4}[-\/\.]\d{2}[-\/\.]\d{2})$/.test(it.str.trim()));
+
+    // For each code, find closest numeric value at same Y
+    const coordResults = [];
+    for(const code of finalCodeItems){
+      // Find numbers at similar Y (within 3pt)
+      const sameRowNums = numItems.filter(n => Math.abs(n.y - code.y) < 8);
+      // Find dates at similar Y
+      const sameRowDates = dateItems.filter(d => Math.abs(d.y - code.y) < 8);
+
+      let amt = 0;
+      if(sameRowNums.length > 0){
+        // Prefer the "Total" column — usually at a specific X position
+        // Use the amount at the rightmost position that's < 500000
+        const reasonable = sameRowNums.filter(n=>{
+          const v=parseFloat(n.str.replace(/,/g,'').replace(/[()]/g,''));
+          return v < 500000 && v > 0;
+        }).sort((a,b)=>a.x-b.x);
+        if(reasonable.length > 0) amt = parseFloat(reasonable[reasonable.length-1].str.replace(/,/g,''));
+      }
+
+      const dt = sameRowDates.length > 0 ? sameRowDates[0].str : '';
+      if(amt > 0) coordResults.push({invoice_no: code.str, date: dt, amount: amt});
+    }
+
+    console.log('Coordinate matching results:', coordResults.length);
+    if(coordResults.length >= 3){
+      window._lastRawText = allText;
+      setP(100,'Done!');
+      finishSOA(coordResults,'digital',file.name);
+      return;
+    }
+  }
+
+  // Fall back to text-based parsing
+  window._lastRawText = allText;
+  console.log('=== RECONSTRUCTED TEXT (first 3000 chars) ===\n', allText.slice(0,3000));
+  setP(72, 'Parsing text…');
+  const rows = parseText(allText);
+  setP(100, 'Done!');
+
+  if(!rows.length){
+    const preview = allText.split('\n').filter(l=>l.trim()).slice(0,60).join('\n');
+    // Show code count from DeemPlaza attempt to help diagnose
+    const foundCodes = (allText.match(/[CR]-\d{4,}/g)||[]);
+    const diagMsg = foundCodes.length>0
+      ? '<div style="margin-top:6px;font-size:12px;color:var(--amber);">Found '+foundCodes.length+' invoice codes ('+[...new Set(foundCodes)].slice(0,5).join(', ')+'...) but could not extract amounts. Check console (F12) for details.</div>'
+      : '<div style="margin-top:6px;font-size:12px;color:var(--text3);">No invoice codes (C-XXXXX / R-XXXXX) found in extracted text.</div>';
+    setMsg('msg1',
+      '<div class="err">Could not detect invoice rows automatically. Raw text extracted from PDF is shown below — please share this with support to fix the parser for your format.</div>'+
+      diagMsg+
+      '<div class="preview-box" style="max-height:220px;overflow-y:auto;font-size:10px;margin-top:8px;">'+
+      preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'+
+      '<div style="margin-top:8px;font-size:12px;color:var(--text2);">Tip: You can also convert this PDF to Excel and upload that instead.</div>'
+    );
+    $('prog-wrap').style.display='none';
+    $('status1').textContent='Upload both files to continue';
+    return;
+  }
+  finishSOA(rows,'digital',file.name);
+}
+
+function finishSOA(rows,method,fname){
+  soaData=rows;
+  // Reset balance from previous upload
+  if(window._soaLastBalance !== undefined) delete window._soaLastBalance;
+  $('prog-wrap').style.display='none';
+  $('fname-soa').textContent='✓ '+fname+' — '+rows.length+' rows extracted';
+  setBadge(method);
+  const prev=rows.slice(0,3).map(r=>Object.values(r).join('  |  ')).join('\n');
+  // Show warning if row count seems too high (more than 3x typical for OCR)
+  let warn='';
+  if(method==='ocr'&&rows.length>100){
+    warn='<div class="note note-amber" style="margin-top:6px;">⚠ '+rows.length+' rows extracted — if this seems high, check the preview and verify the data looks correct before proceeding.</div>';
+  }
+  setMsg('msg1','<div class="preview-box">Preview (first 3 rows):\n'+prev+'</div>'+warn);
+  checkReady();
+  if(ledgerData.length){
+    $('btn-next1').disabled=false;
+    $('status1').textContent='✓ Ready — SOA: '+rows.length+' rows, Ledger: '+ledgerData.length+' rows';
+    $('status1').style.color='var(--green)';
+    $('status1').style.fontWeight='500';
+  }
+}
+
+// Debug helper — call debugPDF() in browser console after uploading PDF
+window.debugPDF = function(){
+  if(!window._lastRawText){ alert('No PDF raw text stored yet. Upload a PDF first.'); return; }
+  const t = window._lastRawText;
+  console.log('=== RAW PDF TEXT ('+t.length+' chars) ===');
+  console.log(t);
+  // Also show in a new window
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write('<pre style="font-size:12px;white-space:pre-wrap;word-break:break-all">'+t.replace(/</g,'&lt;')+'</pre>');
+};
+
+function setBadge(method){
+  const b=$('soa-badge'); b.style.display='inline-block';
+  if(method==='ocr'){b.className='method-pill pill-ocr';b.textContent='OCR — scanned PDF';}
+  else{b.className='method-pill pill-digital';b.textContent='Digital PDF';}
+}
+
+/* ─── Invoice text parser ─── */
+function parseText(text, isOcr=false){
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+  const sep = /\t| {2,}/; // tab or 2+ spaces
+  const dtRe = /(\d{1,2}[-\/\.\s]\d{1,2}[-\/\.\s]\d{2,4}|\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[A-Za-z]{3}\d{2,4})/;
+
+  // Lines to skip
+  const skipKws = ['total outstanding','grand total','sub-total','sub total','subtotal','total amount','total invoices','total records','pending bills','bill-wise','billwise','opening balance','brought forward',
+    'closing balance','opening balance','brought forward','carried forward',
+    'currency :','base currency','page ','printed on','generated on',
+    'report date','run date','prepared by','statement date'];
+  const isSkip = l => {
+    const ll = l.toLowerCase();
+    if(skipKws.some(k => ll.includes(k))) return true;
+    // Skip total/subtotal data rows (they inflate amounts)
+    if(/^\s*(total|sub.?total|grand.?total|closing balance|opening balance)/i.test(l)) return true;
+    return false;
+  };
+
+  // Reject pure years, serial numbers, dates as invoice IDs
+  const isBadInv = v => {
+    if(!v) return true;
+    v = v.trim();
+    if(/^\d{1,3}$/.test(v)) return true;        // pure serial 1-999
+    if(/^20\d{2}$/.test(v)) return true;         // year 2000-2099
+    if(/^19\d{2}$/.test(v)) return true;         // year 1900-1999
+    if(dtRe.test(v) && v.length <= 12) return true; // looks like a date
+    // Tally-style dates: "9-Jan-26", "13-Feb-26"
+    if(/^\d{1,2}-[A-Za-z]{3}-\d{2,4}$/.test(v)) return true;
+    return false;
+  };
+
+  const isGoodInv = v => {
+    if(!v || v.length < 2) return false;
+    if(isBadInv(v)) return false;
+    if(!/\d/.test(v)) return false;
+    // Reject pure numeric DocSeq numbers (8+ digits with no letters/hyphens)
+    // These are internal sequence numbers, not invoice references
+    if(/^\d{8,}$/.test(v.replace(/,/g,''))) return false;
+    // Reject pure month/period values like "6/2022"
+    if(/^\d{1,2}\/\d{4}$/.test(v)) return false;
+    return true;
+  };
+
+  // Skip total/subtotal/summary rows
+  const isTotalRow = l => /^\s*(total|sub.?total|grand.?total|sum|closing|opening)/i.test(l);
+
+  const findCol = (hdrs, kws) => {
+    for(const kw of kws){
+      const idx = hdrs.findIndex(h => h.toLowerCase().includes(kw));
+      if(idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const getAmt = (parts, col) => {
+    if(col >= 0 && col < parts.length){ const v = toNum(parts[col]); if(v > 0) return v; }
+    const nums = parts.map(p => toNum(p)).filter(n => n > 0.01);
+    return nums.length ? nums[nums.length - 1] : 0;
+  };
+
+  const getDt = (parts, col, line) => {
+    if(col >= 0 && col < parts.length && dtRe.test(parts[col])) return parts[col];
+    const m = line.match(dtRe); return m ? m[0] : '';
+  };
+
+  // ── STRATEGY A0: Deem Plaza / Arabic ERP ──
+  // R- codes = payments (amount 0), C- codes = charges (non-zero totals)
+  function strategyDeemPlaza(){
+    const BAD_NUMS = /^(1[6-9]\d{2}|20\d{2}|2[1-9]\d{2})$/;
+
+    function splitConcat(s){
+      let prev=null, r=s;
+      while(r!==prev){
+        prev=r;
+        r=r.replace(/(\d+,?\d*\.\d{2})(\d)/g,'$1 $2');
+      }
+      return r;
+    }
+
+    function parseNums(s, onlyNonZero){
+      const nums=[];
+      for(const m of (splitConcat(s).match(/\(?\d[\d,]*\.?\d*\)?/g)||[])){
+        const isNeg=m.startsWith('(');
+        const v=parseFloat(m.replace(/[(),]/g,'').replace(/,/g,''));
+        if(!isNaN(v) && !BAD_NUMS.test(String(Math.round(v))) && v<1e8){
+          if(onlyNonZero && v<=0) continue;
+          nums.push(isNeg?-v:v);
+        }
+      }
+      return nums;
+    }
+
+    // ── 1. Find ALL C/R codes in raw text ──
+    // Try multiple patterns to handle fragmented PDF text
+    let allCodes = [...new Set(text.match(/[CR]-\d{4,}/g)||[])];
+    // Also try with spaces around hyphen
+    if(allCodes.length === 0){
+      const loose = text.match(/[CR]\s*[-–]\s*\d{4,}/g)||[];
+      allCodes = [...new Set(loose.map(c=>c.replace(/\s/g,'')))];
+    }
+    console.log('DeemPlaza codes found:', allCodes.length, allCodes.slice(0,10));
+
+    // If no codes found at all, this PDF is not DeemPlaza format
+    if(allCodes.length === 0) return [];
+
+    // ── 2. Extract non-zero totals (for C- codes only) ──
+    const STOP_T=['vat','net','balance','payment','chg','from','to','trans','post','doc','description','page '];
+    const nonZeroTotals=[];
+    let collecting=false;
+
+    for(const ln of lines){
+      const ll=ln.toLowerCase().trim();
+      if(/\b[RC]-\d{4,}\b/.test(ln)){ collecting=false; continue; }
+      if(/^\d{1,2}:\d{2}/.test(ll)) continue; // skip time lines
+      if(/^total\b/.test(ll)){
+        collecting=true;
+        parseNums(ln.replace(/^total/i,''),true).forEach(v=>nonZeroTotals.push(v));
+        continue;
+      }
+      if(collecting){
+        if(STOP_T.some(kw=>new RegExp('^'+kw+'\\b','i').test(ll))){ collecting=false; continue; }
+        parseNums(ln,true).forEach(v=>nonZeroTotals.push(v));
+      }
+    }
+    console.log('DeemPlaza non-zero totals:', nonZeroTotals.length, nonZeroTotals.slice(0,8));
+
+    // ── 3. Extract closing balance from LAST page ──
+    const STOP_B=['total','vat','net','payment','chg','from','to','trans','post','doc','description','page '];
+    const pageChunks=text.split(/\bpage\s+\d+\b/gi).filter(p=>p.trim());
+    let lastPageBalance=null;
+
+    for(let i=pageChunks.length-1; i>=0; i--){
+      const pgLines=pageChunks[i].split('\n').map(l=>l.trim()).filter(Boolean);
+      let bc=false; const bv=[];
+      for(const ln of pgLines){
+        const ll=ln.toLowerCase().trim();
+        if(/\b[RC]-\d{4,}\b/.test(ln)){bc=false;continue;}
+        if(/^balance\b/.test(ll)){
+          bc=true;
+          parseNums(ln.replace(/^balance/i,''),false).filter(v=>v>0).forEach(v=>bv.push(v));
+          continue;
+        }
+        if(bc){
+          if(STOP_B.some(kw=>new RegExp('^'+kw+'\\b','i').test(ll))){bc=false;continue;}
+          parseNums(ln,false).filter(v=>v>0).forEach(v=>bv.push(v));
+        }
+      }
+      console.log('Page '+(i+1)+' balance values:', bv);
+      if(bv.length>0){
+        lastPageBalance=bv[bv.length-1];
+        window._soaLastBalance=lastPageBalance;
+        console.log('Closing balance (last page):', lastPageBalance);
+        break;
+      }
+    }
+
+    // ── 4. Trans Dates ──
+    const dates=[];
+    for(const ln of lines){
+      if(/trans\s*date/i.test(ln)){
+        dates.push(...(ln.match(/\d{1,2}\/\d{1,2}\/\d{2,4}/g)||[]));
+      }
+    }
+    // Fallback: collect all dates in order
+    if(dates.length===0){
+      for(const ln of lines){
+        for(const d of (ln.match(/\d{2}\/\d{2}\/\d{4}/g)||[])) dates.push(d);
+      }
+    }
+    console.log('DeemPlaza dates:', dates.length, dates.slice(0,5));
+
+    // ── 5. Build results ──
+    // R- codes = 0 amount (payment entries)
+    // C- codes = next non-zero total in sequence
+    const results=[];
+    let cIdx=0, dIdx=0;
+
+    for(const code of allCodes){
+      const dt = dIdx<dates.length ? dates[dIdx++] : '';
+      if(code.startsWith('R-')){
+        results.push({invoice_no:code, date:dt, amount:0});
+      } else {
+        const amt = cIdx<nonZeroTotals.length ? nonZeroTotals[cIdx++] : 0;
+        results.push({invoice_no:code, date:dt, amount:amt});
+      }
+    }
+
+    console.log('DeemPlaza results:', results.length, results.slice(0,5));
+
+    // Return results if we have codes — even if some amounts are 0
+    // Don't silently fail due to alignment issues
+    return results.length>=2 ? results : [];
+  }
+
+  // ── STRATEGY A: SAR / Deem Plaza ──
+  // Trans Date | From | To | Post Month | Doc Seq | Chg/Rec | Net | VAT | Total | Payment | Balance
+  function strategySAR(){
+    const results = [];
+    let hIdx = -1, hdrs = [];
+    for(let i = 0; i < lines.length; i++){
+      const l = lines[i].toLowerCase();
+      if((l.includes('doc seq') || l.includes('chg') || (l.includes('from') && l.includes('to'))) &&
+         (l.includes('net') || l.includes('total') || l.includes('balance'))){
+        hdrs = lines[i].split(sep).map(t => t.trim()).filter(Boolean);
+        hIdx = i; break;
+      }
+    }
+    if(hIdx < 0) return [];
+    const invCol  = findCol(hdrs, ['doc seq','chg/rec','chg','rec','doc no']);
+    const dateCol = findCol(hdrs, ['trans date','date','from']);
+    const amtCol  = findCol(hdrs, ['total','net','balance','amount']);
+    for(let i = hIdx + 1; i < lines.length; i++){
+      const line = lines[i]; if(!line || isSkip(line)) continue;
+      const parts = line.split(sep).map(c => c.trim()).filter(Boolean);
+      if(parts.length < 3) continue;
+      let inv = invCol >= 0 && invCol < parts.length ? parts[invCol] : '';
+      if(!isGoodInv(inv)){
+        const m = line.match(/\b([A-Z][-\/]?\d{4,})\b/); if(m) inv = m[1]; else continue;
+      }
+      const dt = getDt(parts, dateCol, line);
+      const amt = getAmt(parts, amtCol);
+      if(amt > 0) results.push({invoice_no: inv, date: dt, amount: amt});
+    }
+    return results;
+  }
+
+  // ── STRATEGY B: Tim Hortons / Maraq Gate ──
+  // Date | Delivery Customer | Document | Document Number | Debit | Credit | Balance
+  // Document Number = alphanumeric like MI100197112015 (NOT pure numeric DocSeq)
+  function strategyTimHortons(){
+    const results = [];
+    let hIdx = -1, hdrs = [];
+    for(let i = 0; i < lines.length; i++){
+      const l = lines[i].toLowerCase();
+      if((l.includes('document number') || l.includes('doc number') || l.includes('document no')) &&
+         (l.includes('debit') || l.includes('credit') || l.includes('balance'))){
+        hdrs = lines[i].split(sep).map(t => t.trim()).filter(Boolean);
+        hIdx = i; break;
+      }
+    }
+    if(hIdx < 0) return [];
+    const hdrsL = hdrs.map(h => h.toLowerCase());
+    const invCol  = findCol(hdrsL, ['document number','doc number','document no','doc no']);
+    const dateCol = findCol(hdrsL, ['date']);
+    const amtCol  = findCol(hdrsL, ['debit','total','net','amount']);
+    if(invCol < 0) return [];
+
+    for(let i = hIdx + 1; i < lines.length; i++){
+      const line = lines[i];
+      if(!line || isSkip(line)) continue;
+      // Skip total/subtotal rows
+      if(/^\s*(total|sub.?total|grand.?total)\b/i.test(line)) continue;
+      const parts = line.split(sep).map(c => c.trim()).filter(Boolean);
+      if(parts.length < 3) continue;
+
+      let inv = invCol < parts.length ? parts[invCol] : '';
+      // Reject pure DocSeq (8+ digits, no letters) — they are internal sequence numbers
+      if(inv && /^\d{7,}$/.test(inv)){
+        // Look for alphanumeric doc reference in the same row
+        const better = parts.find(p =>
+          p.length >= 4 && /[A-Za-z]/.test(p) && /\d/.test(p) && isGoodInv(p)
+        );
+        if(better) inv = better; else continue;
+      }
+      if(!isGoodInv(inv)){
+        // If invCol is positively known, accept 4-7 digit numeric invoice numbers directly
+        if(invCol >= 0 && invCol < parts.length){
+          const colVal = parts[invCol].trim();
+          if(/^\d{4,7}$/.test(colVal) && !isBadInv(colVal)) inv = colVal;
+        }
+        if(!isGoodInv(inv)) continue;
+      }
+
+      const dt  = getDt(parts, dateCol, line);
+      const amt = getAmt(parts, amtCol);
+      if(amt > 0) results.push({invoice_no: inv, date: dt, amount: amt});
+    }
+    // Remove last row if it equals sum of all others (= grand total row)
+    if(results.length > 1){
+      const total = results.slice(0,-1).reduce((s,r)=>s+r.amount,0);
+      const last  = results[results.length-1];
+      if(Math.abs(last.amount - total) < 0.05) results.pop();
+    }
+    return results;
+  }
+
+  // ── STRATEGY C: Ageing report ──
+  // Invoice No | Invoice Date | Total | Current | 0-30 | 31-60 | 61-90 | 90+
+  function strategyAgeing(){
+    const results = [];
+    let hIdx = -1, hdrs = [];
+    for(let i = 0; i < lines.length; i++){
+      const l = lines[i].toLowerCase();
+      if((l.includes('invoice no') || l.includes('invoice number') || l.includes('inv no')) &&
+         (l.includes('total') || l.includes('amount') || l.includes('owed') || l.includes('balance'))){
+        hdrs = lines[i].split(sep).map(t => t.trim()).filter(Boolean); hIdx = i; break;
+      }
+    }
+    if(hIdx < 0) return [];
+    const invCol  = findCol(hdrs, ['invoice no','invoice number','inv no','invoice']);
+    const dateCol = findCol(hdrs, ['invoice date','inv date','doc date','date']);
+    const amtCol  = findCol(hdrs, ['total owed','current owed','total amount','total','amount','balance']);
+    if(invCol < 0) return [];
+    for(let i = hIdx + 1; i < lines.length; i++){
+      const line = lines[i]; if(!line || isSkip(line)) continue;
+      const parts = line.split(sep).map(c => c.trim()).filter(Boolean);
+      if(parts.length < 2) continue;
+      const inv = invCol < parts.length ? parts[invCol] : '';
+      if(!isGoodInv(inv)) continue;
+      const dt  = getDt(parts, dateCol, line);
+      const amt = getAmt(parts, amtCol);
+      if(amt > 0) results.push({invoice_no: inv, date: dt, amount: amt});
+    }
+    return results;
+  }
+
+  // ── STRATEGY D: Generic header-based ──
+  function strategyGeneric(){
+    const results = [];
+    const hdrDetect = ['no','date','amount','balance','document','invoice','bill','voucher',
+      'ref','description','from','to','debit','credit','trans','net','total','doc','seq'];
+    let hIdx = -1, hdrs = [];
+    for(let i = 0; i < lines.length; i++){
+      if(isSkip(lines[i])) continue;
+      const l = lines[i].toLowerCase();
+      const hits = hdrDetect.filter(k => new RegExp('\\b' + k + '\\b').test(l)).length;
+      if(hits >= 2 && lines[i].length < 500){
+        const tokens = lines[i].split(sep).map(t => t.trim()).filter(Boolean);
+        if(tokens.length >= 2){ hdrs = tokens; hIdx = i; break; }
+      }
+    }
+    if(hIdx < 0) return [];
+    const hdrsL = hdrs.map(h => h.toLowerCase());
+    const invCol  = findCol(hdrsL, ['document no','doc no','doc seq','invoice no','invoice number',
+      'inv no','bill no','voucher no','ref no','reference','transaction no','challan','document number']);
+    const dateCol = findCol(hdrsL, ['trans date','transaction date','document date','invoice date',
+      'bill date','posting date','value date','from date','date']);
+    const amtCol  = findCol(hdrsL, ['balance amount','outstanding','balance due','amount due',
+      'net payable','payable','total','net','debit','credit','amount','value']);
+    for(let i = hIdx + 1; i < lines.length; i++){
+      const line = lines[i]; if(!line || line.length < 3 || isSkip(line)) continue;
+      const parts = line.split(sep).map(c => c.trim()).filter(Boolean);
+      if(parts.length < 2) continue;
+      let inv = invCol >= 0 && invCol < parts.length ? parts[invCol] : '';
+      // Reject pure DocSeq (8+ digit numbers) as invoice IDs
+      if(inv && /^\d{8,}$/.test(inv)) inv = '';
+      if(!isGoodInv(inv)){
+        // If invCol is positively known, accept 4-7 digit numeric invoice numbers directly
+        // (many vendors use purely numeric invoice IDs like 100001, 50023)
+        if(invCol >= 0 && invCol < parts.length){
+          const colVal = parts[invCol].trim();
+          if(/^\d{4,7}$/.test(colVal) && !isBadInv(colVal)) inv = colVal;
+        }
+        // Still no valid inv — look for alphanumeric reference (letters + digits)
+        if(!isGoodInv(inv)){
+          const found = parts.find(p => isGoodInv(p) && /[A-Za-z]/.test(p) && /\d/.test(p));
+          if(found) inv = found; else continue;
+        }
+      }
+      // Skip total/subtotal rows
+      if(isTotalRow(line)) continue;
+      // Skip rows with blank or dash-only invoice numbers
+      if(!inv || /^[-–—\s]*$/.test(inv)) continue;
+      const dt  = getDt(parts, dateCol, line);
+      const amt = getAmt(parts, amtCol);
+      if(amt > 0) results.push({invoice_no: inv, date: dt, amount: amt});
+    }
+    return results;
+  }
+
+  // ── STRATEGY E2: Tally Pending Bills ──
+  // Format: Date | Ref. No. | Opening Amount | Pending Amount | Post-Dated | Final Balance | Due on | Overdue by days
+  // Amounts have "Dr"/"Cr" suffix. Invoice no is in "Ref. No." column (A-prefixed alphanumeric).
+  function strategyTallyPending(){
+    // ── Tally "Pending Bills / Bill-wise Details" ──
+    // Core insight: amounts in Tally always end with " Dr" or " Cr".
+    // Use regex /(\d[\d,]*\.?\d*)\s*Dr\b/g directly on the RAW LINE.
+    // This is immune to column-position issues, header-splitting, OCR spacing, etc.
+    // The LAST column (Overdue by days: 73, 38) is a plain integer with NO "Dr" — so it's never picked.
+
+    const fullText = lines.join('\n');
+    // Bail early if no Dr-amounts at all — not a Tally format
+    if(!/\d\s*Dr\b/.test(fullText)) return [];
+    // Must look like a Tally statement (has Ref, Pending Bills, or bill-wise keywords)
+    const isTally = /ref\.?\s*no/i.test(fullText)
+                 || /pending\s*bills/i.test(fullText)
+                 || /bill.?wise/i.test(fullText)
+                 || /\bDue\s+on\b/i.test(fullText)
+                 || /overdue/i.test(fullText);
+    if(!isTally) return [];
+
+    const tallyDateRe = /^\d{1,2}-[A-Za-z]{3}-\d{2,4}$/;
+    // Regex to find any "number Dr" pair on a line
+    const drAmtRe = /([\d,]+\.?\d*)\s*Dr\b/gi;
+
+    const results = [];
+
+    for(const line of lines){
+      if(!line || line.length < 5) continue;
+      if(/^\s*(total|sub.?total|grand.?total)/i.test(line)) continue;
+      if(isSkip(line)) continue;
+
+      // Must have at least one Dr-amount
+      const drMatches = [...line.matchAll(/([\d,]+\.?\d*)\s*Dr\b/gi)];
+      if(!drMatches.length) continue;
+
+      // Take the FIRST Dr-amount (Opening Amount = Pending Amount in Tally — all same)
+      const amt = toNum(drMatches[0][1]);
+      if(amt <= 0) continue;
+
+      // Find invoice ref — scan tokens split by any whitespace
+      const tokens = line.split(/\s+/).map(t=>t.trim()).filter(Boolean);
+      let inv = '', dt = '';
+      for(const tok of tokens){
+        if(tallyDateRe.test(tok) || dtRe.test(tok)){ if(!dt) dt = tok; continue; }
+        if(/^\d{1,4}$/.test(tok)) continue;          // skip small integers
+        if(/^[\d,]+\.\d{2}$/.test(tok)) continue;  // skip bare amounts
+        if(/^(Dr|Cr)$/i.test(tok)) continue;           // skip Dr/Cr tokens
+        if(isGoodInv(tok)){ inv = tok; break; }
+      }
+      if(!inv) continue;
+
+      results.push({invoice_no: inv, date: dt, amount: amt});
+    }
+    return results;
+  }
+
+    // ── STRATEGY E: Regex fallback ──
+  function strategyFallback(){
+    const results = [];
+    // Primary: alphanumeric invoice patterns (letters + digits)
+    const invP = /\b([A-Z]{1,6}[-\/]?\d{4,}[A-Z0-9]*|[A-Z]{2,}[0-9]{4,})\b/i;
+    // Secondary: pure numeric invoice patterns (4-7 digits, standalone — not a date/year/amount)
+    const numInvP = /(?:^|\t| {2,})(\d{4,7})(?:\t| {2,}|$)/;
+    lines.forEach(line => {
+      if(isSkip(line)) return;
+
+      // Prefer Dr-amounts if present (avoids picking overdue-day numbers at end of Tally rows)
+      const drMatches = [...line.matchAll(/([\d,]+\.?\d*)\s*Dr\b/gi)];
+
+      // Try primary alphanumeric pattern first
+      const im = line.match(invP);
+      if(im && !isBadInv(im[1])){
+        const dm = line.match(dtRe);
+        if(drMatches.length){
+          const amt = toNum(drMatches[0][1]);
+          if(amt > 0){ results.push({invoice_no: im[1], date: dm ? dm[0] : '', amount: amt}); return; }
+        }
+        const nums = []; let m;
+        const ag = /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/g;
+        while((m = ag.exec(line)) !== null){
+          const n = toNum(m[1]);
+          if(n > 0.01 && !isBadInv(m[1])) nums.push(n);
+        }
+        const bigNums = nums.filter(n => n >= 100);
+        const chosen = bigNums.length ? bigNums[bigNums.length-1] : (nums.length ? nums[nums.length-1] : 0);
+        if(chosen > 0){ results.push({invoice_no: im[1], date: dm ? dm[0] : '', amount: chosen}); return; }
+      }
+
+      // Fallback: pure numeric invoice IDs (tab/multi-space separated columns)
+      const nm = line.match(numInvP);
+      if(nm && !isBadInv(nm[1])){
+        const dm = line.match(dtRe);
+        // Only accept if line also contains a reasonable amount (>= 100)
+        const allNums = [...line.matchAll(/(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/g)]
+          .map(x => toNum(x[1])).filter(n => n >= 100 && n < 1e8);
+        if(allNums.length){
+          const amt = allNums[allNums.length - 1];
+          results.push({invoice_no: nm[1], date: dm ? dm[0] : '', amount: amt});
+        }
+      }
+    });
+    return results;
+  }
+
+  // ── STRATEGY F: Pure numeric invoice IDs ──
+  // Handles vendors whose SOA has purely numeric invoice numbers (e.g. 10001, 50023)
+  // with no alpha prefix. Works by finding a header row with invoice/bill keywords,
+  // then extracting the numeric column value and largest amount per row.
+  function strategyPureNumeric(){
+    const results = [];
+    const hdrKws = ['invoice','inv','bill','ref','no','number','document','voucher','doc'];
+    let hIdx = -1, hdrs = [];
+    for(let i = 0; i < lines.length; i++){
+      if(isSkip(lines[i])) continue;
+      const l = lines[i].toLowerCase();
+      const hits = hdrKws.filter(k => new RegExp('\\b' + k + '\\b').test(l)).length;
+      if(hits >= 1 && (l.includes('amount') || l.includes('total') || l.includes('debit') ||
+         l.includes('balance') || l.includes('net') || l.includes('value'))){
+        const tokens = lines[i].split(sep).map(t => t.trim()).filter(Boolean);
+        if(tokens.length >= 2){ hdrs = tokens; hIdx = i; break; }
+      }
+    }
+    if(hIdx < 0) return [];
+    const hdrsL = hdrs.map(h => h.toLowerCase());
+    const invCol  = findCol(hdrsL, ['invoice no','invoice number','inv no','bill no','doc no',
+      'voucher no','ref no','reference','invoice','bill','inv','no.','no','ref']);
+    const dateCol = findCol(hdrsL, ['date','dt']);
+    const amtCol  = findCol(hdrsL, ['amount','amt','total','net','debit','value','balance','outstanding']);
+    if(invCol < 0) return [];
+
+    for(let i = hIdx + 1; i < lines.length; i++){
+      const line = lines[i]; if(!line || line.length < 3 || isSkip(line)) continue;
+      if(isTotalRow(line)) continue;
+      const parts = line.split(sep).map(c => c.trim()).filter(Boolean);
+      if(parts.length < 2 || invCol >= parts.length) continue;
+
+      const rawInv = parts[invCol].trim();
+      // Accept: 4-7 digit pure numeric OR alphanumeric (letters+digits)
+      let inv = '';
+      if(/^\d{4,7}$/.test(rawInv) && !isBadInv(rawInv)) inv = rawInv;
+      else if(isGoodInv(rawInv)) inv = rawInv;
+      else continue;
+
+      const dt  = getDt(parts, dateCol, line);
+      const amt = getAmt(parts, amtCol);
+      if(amt > 0) results.push({invoice_no: inv, date: dt, amount: amt});
+    }
+    return results;
+  }
+
+  // ── Run ALL strategies — pick the one closest to actual data row count ──
+  const strategies = [
+    {name:'TallyPending',  fn: strategyTallyPending},
+    {name:'DeemPlaza',     fn: strategyDeemPlaza},
+    {name:'SAR',           fn: strategySAR},
+    {name:'TimHortons',    fn: strategyTimHortons},
+    {name:'Ageing',        fn: strategyAgeing},
+    {name:'Generic',       fn: strategyGeneric},
+    {name:'PureNumeric',   fn: strategyPureNumeric},
+    {name:'Fallback',      fn: strategyFallback},
+  ];
+
+  let best = [], bestName = '', bestScore = -1;
+  for(const s of strategies){
+    try{
+      const r = s.fn();
+      console.log('Strategy', s.name, ':', r.length, 'rows', r.slice(0,2));
+      if(!r.length) continue;
+      const goodRows = r.filter(x=>x.amount>0 && x.invoice_no && x.invoice_no.length>=3).length;
+      // Compute median amount — strategies picking overdue-days (73, 38) have tiny medians
+      const amts = r.map(x=>x.amount).filter(a=>a>0).sort((a,b)=>a-b);
+      const median = amts.length ? amts[Math.floor(amts.length/2)] : 0;
+      // Heavy penalty if median amount < 50 — almost certainly wrong (days/serial nos picked)
+      const amtBonus = median >= 500 ? 50 : median >= 100 ? 20 : median >= 50 ? 5 : 0;
+      const score = goodRows * 2 + r.length + amtBonus;
+      console.log('Strategy', s.name, 'score:', score, '| median amt:', median, '| goodRows:', goodRows);
+      if(score > bestScore){ best = r; bestName = s.name; bestScore = score; }
+    } catch(e){ console.warn('Strategy', s.name, 'failed:', e.message); }
+  }
+
+  console.log('Best strategy:', bestName, '|', best.length, 'rows before dedup');
+
+  // ── Dedup: remove exact duplicate rows (same inv + date + amount) ──
+  // But keep rows where same invoice appears with different dates or amounts
+  const seen = new Set();
+  const deduped = best.filter(r => {
+    if(!r.invoice_no || r.invoice_no.length < 1) return false;
+    // Key = invoice + date + amount combined — only drop true duplicates
+    const k = norm(r.invoice_no) + '||' + norm(r.date || '') + '||' + (r.amount || 0).toFixed(2);
+    if(seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+
+  console.log('After dedup:', deduped.length, 'rows');
+  return deduped;
+}
+/* ─── Step 2 setup ─── */
+function populateSel(id,cols){$(id).innerHTML=cols.map(c=>'<option value="'+c+'">'+c+'</option>').join('');}
+function guess(cols,kws){return cols.find(c=>kws.some(k=>c.toLowerCase().includes(k)))||null;}
+
+function goStep2(){
+  const sc=Object.keys(soaData[0]||{});
+  const lc=Object.keys(ledgerData[0]||{});
+  ['soa-inv','soa-date','soa-amt'].forEach(id=>populateSel(id,sc));
+  ['led-inv','led-date','led-amt','led-status'].forEach(id=>populateSel(id,lc));
+
+  // Auto-guess SOA
+  const sg=guess(sc,['invoice','inv','bill','voucher','ref','no','number']);
+  if(sg) $('soa-inv').value=sg;
+  const sdg=guess(sc,['date','dt']); if(sdg) $('soa-date').value=sdg;
+  const sag=guess(sc,['amount','amt','total','net','value']); if(sag) $('soa-amt').value=sag;
+  // Balance column — hide for PDFs (auto-detected), show for CSV/Excel
+  $('balance-col-row').style.display='none';
+  $('balance-note').style.display='none';
+  $('balance-auto-note').style.display='none';
+  if(!soaIsPdf){
+    $('balance-col-row').style.display='';
+    populateSel('soa-balance', sc);
+    $('soa-balance').disabled=true; $('chk-soa-balance').checked=false;
+    const sbg=guess(sc,['balance','closing','outstanding','running']); if(sbg){$('soa-balance').value=sbg;}
+  }
+  // Pre-fill SOA outstanding manual input if auto-detected from PDF
+  const manualIn = $('soa-outstanding-manual');
+  const detectedBal = window._soaLastBalance;
+  if(detectedBal !== undefined && detectedBal !== null && detectedBal > 0){
+    manualIn.value = detectedBal.toFixed(2);
+    $('soa-out-hint').style.display='block';
+    $('soa-out-hint').innerHTML = 'Auto-detected from PDF <strong>Balance column</strong> — last value = <strong>' + fmt(detectedBal) + '</strong>. This is the closing balance after all payments. Correct if wrong.';
+    $('soa-out-auto-lbl').style.color='var(--green)';
+    $('soa-out-auto-lbl').textContent='✓ Auto-detected from Balance column';
+  } else {
+    manualIn.value='';
+    $('soa-out-hint').style.display='none';
+    $('soa-out-auto-lbl').style.color='';
+    $('soa-out-auto-lbl').textContent='Enter closing balance from last row of SOA Balance column';
+  }
+
+  // Auto-guess ledger
+  const lg=guess(lc,['invoice','inv','bill','voucher','ref','no','number']); if(lg) $('led-inv').value=lg;
+  const ldg=guess(lc,['date','dt']); if(ldg) $('led-date').value=ldg;
+  const lag=guess(lc,['amount','amt','total','net','value']); if(lag) $('led-amt').value=lag;
+  const lstg=guess(lc,['status','payment','paid','cleared','settled','flag']); if(lstg) $('led-status').value=lstg;
+
+  // Disable optional selects by default
+  $('led-status').disabled=true; $('chk-led-status').checked=false; $('paid-config').style.display='none';
+
+  // Populate zero-col
+  $('zero-col').innerHTML=lc.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+  const zcg=guess(lc,['outstanding','balance','due','unpaid','pending','payable','remain']); if(zcg) $('zero-col').value=zcg;
+
+  // PDF note
+  $('soa-note').innerHTML=soaIsPdf?'<div class="note note-blue">Data extracted from PDF — verify the mapping below before running.</div>':'';
+  if(soaIsPdf){
+    try{$('soa-inv').value='invoice_no';$('soa-date').value='date';$('soa-amt').value='amount';}catch(e){}
+  }
+  goStep(2);
+}
+
+function toggleSel(id,cb){$(id).disabled=!cb.checked;}
+function toggleSoaBalance(cb){$('soa-balance').disabled=!cb.checked;$('balance-note').style.display=cb.checked?'block':'none';}
+function togglePaidConfig(cb){$('led-status').disabled=!cb.checked;$('paid-config').style.display=cb.checked?'block':'none';}
+function setMode(m,el){matchMode=m;document.querySelectorAll('.match-opt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');el.querySelector('input').checked=true;}
+function setPaidMode(m){
+  paidMode=m;
+  $('cfg-zero').style.display=m==='zero'?'block':'none';
+  $('cfg-text').style.display=m==='text'?'block':'none';
+  $('mbtn-zero').className='mode-btn'+(m==='zero'?' active':'');
+  $('mbtn-text').className='mode-btn'+(m==='text'?' active':'');
+}
+function setTolerance(v){
+  tolerance=parseFloat(v);
+  if(tolerance===0){
+    $('tol-display').textContent='Exact (0%)'; $('tol-display').style.color='var(--text3)';
+    $('tol-note').textContent='Amounts must match exactly. Increase to allow small differences due to rounding, TDS, or GST.';
+  } else {
+    $('tol-display').textContent='± '+tolerance.toFixed(1)+'%'; $('tol-display').style.color='var(--accent)';
+    const eg=(100000*tolerance/100).toFixed(0);
+    $('tol-note').textContent='Two amounts match if they differ by ≤ '+tolerance.toFixed(1)+'% — e.g. on ₹1,00,000 invoice, up to ₹'+Number(eg).toLocaleString('en-IN')+' difference is accepted.';
+  }
+}
+
+/* ─── Make match key (primary — canonical normInv) ─── */
+function makeKey(row,iCol,dCol,aCol){
+  if(matchMode==='inv')      return normInv(row[iCol]||'');
+  if(matchMode==='inv-date') return normInv(row[iCol]||'')+'|'+normD(row[dCol]||'');
+  if(matchMode==='amt')      return toNum(row[aCol]).toFixed(2);
+  if(matchMode==='amt-date') return toNum(row[aCol]).toFixed(2)+'|'+normD(row[dCol]||'');
+  return normInv(row[iCol]||'');
+}
+
+/* ─── Reconciliation ─── */
+function runRecon(){
+  try{
+    const si=$('soa-inv').value, sd=$('soa-date').value, sa=$('soa-amt').value;
+    const li=$('led-inv').value, ld=$('led-date').value, la=$('led-amt').value;
+    const useStatus=$('chk-led-status').checked;
+    const ledAmtIsUnpaid = (document.querySelector('input[name="led-amt-type"]:checked')?.value === 'unpaid');
+
+    console.log('SOA rows:', soaData.length, '| Ledger rows:', ledgerData.length);
+    // Balance column for SOA outstanding
+    const useSoaBalance=$('chk-soa-balance')&&$('chk-soa-balance').checked;
+    const soaBalanceCol=$('soa-balance')?$('soa-balance').value:'';
+
+    // Compute SOA outstanding
+    let soaLastBalance = null;
+    // Priority 1: manual input field (always wins)
+    const manualVal = $('soa-outstanding-manual') ? parseFloat($('soa-outstanding-manual').value) : NaN;
+    if(!isNaN(manualVal) && manualVal > 0){
+      soaLastBalance = manualVal;
+      console.log('Using manual SOA outstanding:', soaLastBalance);
+    }
+    // Priority 2: mapped balance column for CSV/Excel
+    if(soaLastBalance === null && useSoaBalance && soaBalanceCol){
+      for(let i=soaData.length-1;i>=0;i--){
+        const v=toNum(soaData[i][soaBalanceCol]);
+        if(v!==0){soaLastBalance=v;break;}
+      }
+    }
+
+    // Build SOA list — skip rows with no valid invoice number
+    const INVALID_INV = /^[-–—\s]*$/; // blank, dashes only
+    const soaList = soaData
+      .filter(r => {
+        const inv = String(r[si]||'').trim();
+        if(!inv || INVALID_INV.test(inv)) return false; // skip blank/dash invoice
+        if(/^\d{13,}$/.test(inv)) return false; // skip pure DocSeq/barcode numbers (13+ digits only)
+        return true;
+      })
+      .map(r=>{
+        const amt = toNum(r[sa]);
+        return {inv:r[si], date:normD(r[sd]||''), amt, _raw:r};
+      });
+    console.log('SOA list after filtering:', soaList.length, '(from', soaData.length, 'raw rows)');
+
+    // Build ledger map — key by invoice no (or amount/date per mode)
+    // Filter fully paid ledger rows based on payment status configuration
+    const zeroColEl = $('zero-col');
+    const zeroCol   = zeroColEl ? zeroColEl.value : '';
+    const paidValsEl = $('paid-vals');
+    const paidValsStr = paidValsEl ? paidValsEl.value : '';
+
+    // Determine if we should filter out paid rows
+    // Works in BOTH modes: zero-amount column OR text status column
+    function isLedgerRowPaid(r){
+      if(!useStatus) return false;
+      if(paidMode === 'zero'){
+        // Paid = unpaid amount column = 0 or blank
+        if(!zeroCol) return false;
+        const v = toNum(r[zeroCol]);
+        return v === 0;
+      } else {
+        // Paid = status column matches paid values list
+        const stCol = $('led-status') ? $('led-status').value : '';
+        if(!stCol) return false;
+        const paidSet = new Set(paidValsStr.split(',').map(v=>v.trim().toLowerCase()).filter(Boolean));
+        return paidSet.has(String(r[stCol]||'').trim().toLowerCase());
+      }
+    }
+
+    const filterPaid = useStatus;
+    const useUnpaidCol = useStatus && paidMode==='zero' && zeroCol;
+    const useTextStatus = useStatus && paidMode==='text';
+
+    // When "Unpaid amount" column type is selected, only rows with a non-zero amount enter reconciliation.
+    // "Invoice amount" (default) keeps all rows — existing behaviour unchanged.
+    const ledgerRows = ledAmtIsUnpaid ? ledgerData.filter(r => toNum(r[la]) > 0) : ledgerData;
+
+    // Matching always uses ALL ledger rows and the selected Amount column (la).
+    // Payment status is ONLY used for calculating outstanding balance — never affects matching.
+    const lm={}, ledByKey={};
+    ledgerRows.forEach(r=>{
+      const k = makeKey(r,li,ld,la);
+      if(!k) return;
+      if(!lm[k]) lm[k]=[];
+      lm[k].push({inv:r[li], date:normD(r[ld]||''), amt:toNum(r[la])});
+      ledByKey[k]=r;
+    });
+
+    // ── Multi-tier fallback maps (invoice-mode only) ──────────────────────────
+    // Tier 2: digits-only key  e.g. "INV2024001" and "2024001" both → "2024001"
+    // Tier 3: trailing-number  e.g. "INV-001" and "001"       both → "1"
+    // Tier 4: pre+num split    e.g. "INV-001" → pre="inv",num="1" matches "001" → pre="",num="1"
+    // Each map: fallback-key → array of primary lm keys
+    const lmDigits={}, lmSuf={}, lmSplit={};
+    if(matchMode==='inv'||matchMode==='inv-date'){
+      ledgerRows.forEach(r=>{
+        const raw=String(r[li]||'');
+        const pk=makeKey(r,li,ld,la);
+        const dt=normD(r[ld]||'');
+        const sfx=matchMode==='inv-date';
+
+        const dKey=digitsOnly(raw)+(sfx?'|'+dt:'');
+        if(dKey&&dKey.replace(/\|.*/,'').length>=2){
+          if(!lmDigits[dKey])lmDigits[dKey]=[];
+          if(!lmDigits[dKey].includes(pk))lmDigits[dKey].push(pk);
+        }
+        const sKey=numSuf(raw)+(sfx?'|'+dt:'');
+        if(sKey&&sKey.replace(/\|.*/,'').length>=2){
+          if(!lmSuf[sKey])lmSuf[sKey]=[];
+          if(!lmSuf[sKey].includes(pk))lmSuf[sKey].push(pk);
+        }
+        const sp=splitInv(raw);
+        if(sp){
+          const spKey=sp.num+(sfx?'|'+dt:'');
+          if(!lmSplit[spKey])lmSplit[spKey]=[];
+          if(!lmSplit[spKey].includes(pk))lmSplit[spKey].push(pk);
+        }
+      });
+    }
+
+    // Match each SOA row against ledger
+    // For duplicate invoice nos in SOA, each one independently matches against ledger
+    const usedLedgerKeys = {};
+
+    function getSoaKey(r){
+      if(matchMode==='inv')      return normInv(r.inv||'');
+      if(matchMode==='inv-date') return normInv(r.inv||'')+'|'+normD(r.date||'');
+      if(matchMode==='amt')      return r.amt.toFixed(2);
+      if(matchMode==='amt-date') return r.amt.toFixed(2)+'|'+normD(r.date||'');
+      return normInv(r.inv||'');
+    }
+
+    // Helper: given a list of primary keys from a fallback map, return the first
+    // that has an available (unmatched) ledger entry, and update trackKey.
+    function fallbackResolve(pks, matchedLedKeys){
+      for(const pk of pks){
+        const usedIdx=matchedLedKeys[pk]||0;
+        if((lm[pk]||[]).length>usedIdx) return pk;
+      }
+      return null;
+    }
+
+    function isPaid(k){
+      const row = ledByKey[k];
+      if(!row) return false;
+      return isLedgerRowPaid(row);
+    }
+
+    // Match each SOA row against ledger
+    allResults = [];
+    const matchedLedKeys = {}; // track which ledger entries already matched
+
+    soaList.forEach(s=>{
+      const k = getSoaKey(s);
+      let ledArr = lm[k] || [];
+      let trackKey = k;
+
+      // ── 4-tier fallback for invoice-based modes ───────────────────────────
+      if(!ledArr.length && (matchMode==='inv'||matchMode==='inv-date')){
+        const raw=String(s.inv||'');
+        const dt=normD(s.date||'');
+        const sfx=matchMode==='inv-date';
+
+        // Tier 2: digits-only
+        const dKey=digitsOnly(raw)+(sfx?'|'+dt:'');
+        if(dKey&&dKey.replace(/\|.*/,'').length>=2&&lmDigits[dKey]){
+          const pk=fallbackResolve(lmDigits[dKey],matchedLedKeys);
+          if(pk){ledArr=lm[pk];trackKey=pk;}
+        }
+        // Tier 3: trailing-number suffix
+        if(!ledArr.length){
+          const sKey=numSuf(raw)+(sfx?'|'+dt:'');
+          if(sKey&&sKey.replace(/\|.*/,'').length>=2&&lmSuf[sKey]){
+            const pk=fallbackResolve(lmSuf[sKey],matchedLedKeys);
+            if(pk){ledArr=lm[pk];trackKey=pk;}
+          }
+        }
+        // Tier 4: split pre+num (handles prefix mismatch e.g. "INV-001" vs "001")
+        if(!ledArr.length){
+          const sp=splitInv(raw);
+          if(sp){
+            const spKey=sp.num+(sfx?'|'+dt:'');
+            if(lmSplit[spKey]){
+              const pk=fallbackResolve(lmSplit[spKey],matchedLedKeys);
+              if(pk){ledArr=lm[pk];trackKey=pk;}
+            }
+          }
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
+      // Find first unmatched ledger entry
+      const usedIdx = matchedLedKeys[trackKey] || 0;
+      const l = ledArr[usedIdx] || null;
+      if(l) matchedLedKeys[trackKey] = usedIdx + 1;
+
+      let status='matched', diff=0, pct=0;
+      if(s && l){
+        diff = +(s.amt - l.amt).toFixed(2);
+        const absDiff = Math.abs(diff);
+        const base = Math.max(s.amt, l.amt);
+        pct = base>0 ? +((absDiff/base)*100).toFixed(2) : 0;
+        if(absDiff<=0.01)                      status='matched';
+        else if(tolerance>0 && pct<=tolerance) status='near';
+        else                                   status='diff';
+      } else {
+        status = 'soa-only';
+      }
+
+      allResults.push({
+        key:k, inv:s.inv,
+        soaDate:s.date||'', soaAmt:s.amt,
+        ledDate:l?.date||'', ledAmt:l?.amt??null,
+        diff, pct, status, paid: isPaid(trackKey)
+      });
+    });
+
+    // Add ledger-only rows (ledger entries with no matching SOA row)
+    // All unmatched ledger rows added regardless of paid status
+    Object.keys(lm).forEach(k=>{
+      const arr = lm[k];
+      const usedCount = matchedLedKeys[k] || 0;
+      for(let i=usedCount; i<arr.length; i++){
+        const l = arr[i];
+        // All ledger rows included in matching — paid status only affects outstanding total
+        allResults.push({
+          key:k+'_led'+i, inv:l.inv,
+          soaDate:'', soaAmt:null,
+          ledDate:l.date||'', ledAmt:l.amt,
+          diff:0, pct:0, status:'led-only', paid:isPaid(k)
+        });
+      }
+    });
+
+    // ── Secondary pass: re-match by invoice number ──────────────────────────
+    // In amount-only (or amt-date) mode, invoices with the same invoice number
+    // but slightly different amounts end up as soa-only + led-only.
+    // This pass catches them and re-classifies as matched / near / diff.
+    // Also acts as a safety net in inv/inv-date mode for any unmatched pairs
+    // that share an invoice number (e.g. due to normalisation edge-cases).
+    (()=>{
+      const soaInvCol = $('chk-soa-inv')&&$('chk-soa-inv').checked;
+      const ledInvCol = $('chk-led-inv')&&$('chk-led-inv').checked;
+      if(!soaInvCol||!ledInvCol) return; // no invoice columns mapped — skip
+      const soaOnlyRows = allResults.filter(r=>r.status==='soa-only' && r.inv);
+      const ledOnlyRows = allResults.filter(r=>r.status==='led-only' && r.inv);
+      if(!soaOnlyRows.length||!ledOnlyRows.length) return;
+      // Build map: normalised invoice → first available led-only row
+      const ledOnlyByInv={};
+      ledOnlyRows.forEach(r=>{
+        const k=normInv(String(r.inv||''));
+        if(k && !ledOnlyByInv[k]) ledOnlyByInv[k]=r;
+      });
+      const toRemove=new Set();
+      soaOnlyRows.forEach(s=>{
+        const k=normInv(String(s.inv||''));
+        if(!k) return;
+        const l=ledOnlyByInv[k];
+        if(!l||toRemove.has(l)) return;
+        // Re-classify this pair
+        const diff=+(s.soaAmt-l.ledAmt).toFixed(2);
+        const absDiff=Math.abs(diff);
+        const base=Math.max(s.soaAmt||0,l.ledAmt||0);
+        const pct=base>0?+((absDiff/base)*100).toFixed(2):0;
+        const status=absDiff<=0.01?'matched':(tolerance>0&&pct<=tolerance?'near':'diff');
+        s.ledAmt=l.ledAmt; s.ledDate=l.ledDate;
+        s.diff=diff; s.pct=pct; s.status=status; s.paid=l.paid;
+        toRemove.add(l);
+        delete ledOnlyByInv[k]; // prevent double-use
+      });
+      if(toRemove.size) allResults=allResults.filter(r=>!toRemove.has(r));
+    })();
+
+    // Counts
+    const c={matched:0,near:0,diff:0,'soa-only':0,'led-only':0};
+    allResults.forEach(r=>c[r.status]++);
+    $('r-matched').textContent=c.matched;
+    $('r-near').textContent=c.near;
+    $('r-diff').textContent=c.diff;
+    $('r-soa-only').textContent=c['soa-only'];
+    $('r-led-only').textContent=c['led-only'];
+
+    // Outstanding
+    let soaMatchAmt=0, soaDiffAmt=0, soaOnlyAmt=0;
+    let ledTotal=0, ledPaid=0, ledUnpaid=0, ledUnpaidMatch=0, ledUnpaidDiff=0, ledUnpaidOnly=0;
+
+    console.log('Total reconciliation rows:', allResults.length,
+      '| SOA-only:', allResults.filter(r=>r.status==='soa-only').length,
+      '| Matched:', allResults.filter(r=>r.status==='matched').length);
+
+    if(filterPaid){
+      console.log('Reconciliation excludes fully paid ledger rows (unpaid amount = 0)');
+    }
+
+    allResults.forEach(r=>{
+      const soa=r.soaAmt||0, led=r.ledAmt||0;
+      if(r.status==='matched'||r.status==='near') soaMatchAmt+=soa;
+      else if(r.status==='diff') soaDiffAmt+=soa;
+      else if(r.status==='soa-only') soaOnlyAmt+=soa;
+      if(led>0){
+        ledTotal+=led;
+        if(r.paid){ ledPaid+=led; }
+        else{
+          ledUnpaid+=led;
+          if(r.status==='matched'||r.status==='near') ledUnpaidMatch+=led;
+          else if(r.status==='diff') ledUnpaidDiff+=led;
+          else if(r.status==='led-only') ledUnpaidOnly+=led;
+        }
+      }
+    });
+
+    // Total SOA invoice value = sum of ALL SOA rows
+    const soaTotal = soaList.reduce((s,r)=>s+(r.amt||0), 0);
+    // SOA outstanding = last balance from Balance column (manual or auto)
+    const soaOut = (soaLastBalance!==null && soaLastBalance>0) ? soaLastBalance : (soaDiffAmt+soaOnlyAmt);
+    console.log('SOA total:', soaTotal, '| SOA outstanding (balance):', soaOut, '| soaLastBalance:', soaLastBalance);
+    // Ledger outstanding = ALWAYS the direct sum of the unpaid/outstanding column
+    // paidMode='zero' + zeroCol mapped: sum zeroCol values (actual outstanding per invoice)
+    // paidMode='text': sum invoice amounts of rows not marked paid
+    // No payment status configured: sum all ledger invoice amounts
+    // Matching is NEVER affected — this only drives the outstanding total
+    let ledOut;
+    if(useStatus && paidMode==='zero' && zeroCol){
+      ledOut = ledgerData.reduce((s,r)=>s+toNum(r[zeroCol]),0);
+    } else if(useStatus && paidMode==='text'){
+      ledOut = ledUnpaid;
+    } else {
+      ledOut = ledgerData.reduce((s,r)=>s+toNum(r[la]),0);
+    }
+    const netDiff=soaOut-ledOut;
+
+    outStats={soaTotal,soaMatchAmt,soaDiffAmt,soaOnlyAmt,soaOut,soaLastBalance,useSoaBalance,ledTotal,ledPaid,ledUnpaid,ledUnpaidMatch,ledUnpaidDiff,ledUnpaidOnly,ledOut,netDiff,useStatus,c,tolerance,matchMode};
+
+    // SOA panel
+    $('o-soa-total').textContent=fmt(soaTotal);
+    $('o-soa-matched').textContent=fmt(soaMatchAmt);
+    $('o-soa-diff').textContent=fmt(soaDiffAmt);
+    $('o-soa-only').textContent=fmt(soaOnlyAmt);
+    $('o-soa-out').textContent=fmt(soaOut);
+    // Update label to indicate source
+    const soaOutLbl=document.querySelector('#o-soa-out')?.closest('.out-row')?.querySelector('.lbl');
+    if(soaOutLbl) soaOutLbl.textContent=(soaLastBalance!==null&&soaLastBalance>0)?'Total outstanding (closing balance)':'Total outstanding (SOA)';
+
+    // Ledger panel — always shows unpaid breakdown
+    $('o-led-total').textContent=fmt(ledTotal);
+    if(useStatus){
+      $('o-led-r1').textContent=fmt(ledPaid);           $('o-led-lbl1').textContent='Paid invoices';
+      $('o-led-r2').textContent=fmt(ledUnpaidMatch+ledUnpaidDiff); $('o-led-lbl2').textContent='Unpaid (matched/diff)';
+      $('o-led-r3').textContent=fmt(ledUnpaidOnly);     $('o-led-lbl3').textContent='Unpaid (not in SOA)';
+    } else {
+      const lm2=allResults.filter(r=>r.status==='matched'||r.status==='near').reduce((s,r)=>s+(r.ledAmt||0),0);
+      const ld2=allResults.filter(r=>r.status==='diff').reduce((s,r)=>s+(r.ledAmt||0),0);
+      const lo2=allResults.filter(r=>r.status==='led-only').reduce((s,r)=>s+(r.ledAmt||0),0);
+      $('o-led-r1').textContent=fmt(lm2); $('o-led-lbl1').textContent='Matched & agreed';
+      $('o-led-r2').textContent=fmt(ld2); $('o-led-lbl2').textContent='Amount with difference';
+      $('o-led-r3').textContent=fmt(lo2); $('o-led-lbl3').textContent='Not in SOA';
+    }
+    $('o-led-out').textContent=fmt(ledOut);
+    $('o-led-lbl4').textContent = useUnpaidCol ? 'Total outstanding (Unpaid column)' : 'Total outstanding (Ledger)';
+
+    // Banner
+    const banner=$('diff-banner'), abs=Math.abs(netDiff);
+    if(abs<0.01){
+      banner.className='diff-banner diff-ok';
+      $('diff-txt').textContent='✓ Outstanding amounts match between SOA and ledger';
+      $('diff-amt').textContent='No difference';
+    } else {
+      banner.className='diff-banner diff-warn';
+      $('diff-txt').textContent=netDiff>0?'SOA shows more outstanding than our ledger':'Our ledger shows more outstanding than SOA';
+      $('diff-amt').textContent='Net difference: ₹'+fmt(abs);
+    }
+
+    // Mode note
+    const modeLabels={inv:'Invoice number only','inv-date':'Invoice number + date',amt:'Amount only','amt-date':'Amount + date'};
+    const tolStr=tolerance>0?' | Tolerance: ±'+tolerance.toFixed(1)+'%':' | Exact match';
+    const filterNote = useUnpaidCol ? ' · Matching on unpaid amount only (paid rows excluded)' :
+                       useTextStatus ? ' · Fully paid ledger rows excluded' :
+                       ledAmtIsUnpaid ? ' · Unpaid amount column — paid rows excluded from reconciliation' : '';
+    $('mode-note').textContent='Matching: '+modeLabels[matchMode]+tolStr+' · '+allResults.length+' total records'+filterNote;
+
+    // Dates columns in table header
+    const showDates=matchMode==='inv-date'||matchMode==='amt-date';
+    $('th-soa-date').style.display=showDates?'':'none';
+    $('th-led-date').style.display=showDates?'':'none';
+    renderTable('all');
+    // Reset tabs
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelector('.tab').classList.add('active');
+    goStep(3);
+
+  } catch(e){
+    alert('Reconciliation error: '+e.message+'\n\nPlease check your column mappings.');
+    console.error(e);
+  }
+}
+
+/* ─── Render table ─── */
+function showTab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable(tab);
+}
+
+function renderTable(tab){
+  const rows=tab==='all'?allResults:allResults.filter(r=>r.status===tab);
+  const tb=$('tbl-body');
+  const showDates=matchMode==='inv-date'||matchMode==='amt-date';
+  if(!rows.length){tb.innerHTML='<tr><td colspan="8" class="empty">No records in this category</td></tr>';return;}
+  tb.innerHTML=rows.map(r=>{
+    const badge=
+      r.status==='matched'?'<span class="badge b-match">Matched</span>':
+      r.status==='near'?'<span class="badge b-near">Near match</span>':
+      r.status==='diff'?'<span class="badge b-diff">Amt mismatch</span>':
+      r.status==='soa-only'?'<span class="badge b-miss">Only in SOA</span>':
+      '<span class="badge b-miss">Only in ledger</span>';
+    const dc=r.diff!==0?'<span class="diff-amt">'+(r.diff>0?'+':'')+r.diff.toLocaleString()+'</span>':'—';
+    const pc=r.pct>0?'<span class="pct-amt">±'+r.pct.toFixed(2)+'%</span>':'—';
+    const dtCols=showDates?'<td>'+(r.soaDate||'—')+'</td><td>'+(r.ledDate||'—')+'</td>':'';
+    return '<tr><td>'+(r.inv||'—')+'</td>'+dtCols+
+      '<td>'+(r.soaAmt!==null?r.soaAmt.toLocaleString():'—')+'</td>'+
+      '<td>'+(r.ledAmt!==null?r.ledAmt.toLocaleString():'—')+'</td>'+
+      '<td>'+dc+'</td><td>'+pc+'</td><td>'+badge+'</td></tr>';
+  }).join('');
+}
+
+/* ─── Excel export ─── */
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const today=new Date().toLocaleDateString('en-IN');
+  const modeLabels={inv:'Invoice number only','inv-date':'Invoice number + date',amt:'Amount only','amt-date':'Amount + date'};
+  const o=outStats;
+
+  const summary=[
+    ['VENDOR RECONCILIATION SUMMARY'],
+    ['Generated on:',today],
+    ['Matching method:',modeLabels[o.matchMode]],
+    ['Amount tolerance:',o.tolerance>0?'± '+o.tolerance.toFixed(1)+'%':'Exact match'],
+    [''],
+    ['RECORD COUNT'],
+    ['Category','Count'],
+    ['Matched (exact)',o.c.matched],
+    ['Near match (within tolerance)',o.c.near],
+    ['Amount mismatch',o.c.diff],
+    ['Only in vendor SOA',o.c['soa-only']],
+    ['Only in our ledger',o.c['led-only']],
+    ['Total',allResults.length],
+    [''],
+    ['OUTSTANDING — VENDOR SOA'],
+    ['Description','Amount (₹)'],
+    ['Total invoice value',+o.soaTotal.toFixed(2)],
+    ['Matched & agreed (incl. near match)',+o.soaMatchAmt.toFixed(2)],
+    ['Amount with difference',+o.soaDiffAmt.toFixed(2)],
+    ['Not in our ledger',+o.soaOnlyAmt.toFixed(2)],
+    ['OUTSTANDING (SOA)'+(o.useSoaBalance&&o.soaLastBalance!==null?' — from last balance value':''), +o.soaOut.toFixed(2)],
+    [''],
+    ['OUTSTANDING — OUR LEDGER'],
+    ['Basis', o.useStatus?'Unpaid invoices (payment status column)':'All ledger invoices'],
+    ['Description','Amount (₹)'],
+    ['Total invoice value',+o.ledTotal.toFixed(2)],
+    o.useStatus?['Paid invoices',+o.ledPaid.toFixed(2)]:['Matched & agreed',+(o.ledTotal-o.ledOut).toFixed(2)],
+    o.useStatus?['Unpaid — matched/near match',+o.ledUnpaidMatch.toFixed(2)]:['Amount with difference',+o.ledUnpaidDiff.toFixed(2)],
+    o.useStatus?['Unpaid — amount differs from SOA',+o.ledUnpaidDiff.toFixed(2)]:['Not in SOA',+o.ledUnpaidOnly.toFixed(2)],
+    o.useStatus?['Unpaid — not in SOA',+o.ledUnpaidOnly.toFixed(2)]:null,
+    ['OUTSTANDING (Ledger) — Total Unpaid',+o.ledOut.toFixed(2)],
+    [''],
+    ['NET DIFFERENCE (SOA − Ledger outstanding)',+o.netDiff.toFixed(2)],
+  ].filter(Boolean);
+
+  const ws1=XLSX.utils.aoa_to_sheet(summary);
+  ws1['!cols']=[{wch:46},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Summary');
+
+  // Detail sheets
+  const showDates=matchMode==='inv-date'||matchMode==='amt-date';
+  let hdr=['Invoice No'];
+  if(showDates) hdr.push('SOA Date');
+  hdr.push('SOA Amount');
+  if(showDates) hdr.push('Ledger Date');
+  hdr.push('Ledger Amount','Difference','Diff %','Status');
+
+  const statusLabel={matched:'Matched',near:'Near match (within tolerance)',diff:'Amount mismatch','soa-only':'Only in SOA','led-only':'Only in ledger'};
+  const makeRow=r=>{
+    const row=[r.inv||''];
+    if(showDates) row.push(r.soaDate||'');
+    row.push(r.soaAmt??'');
+    if(showDates) row.push(r.ledDate||'');
+    row.push(r.ledAmt??'',r.diff,r.pct?r.pct.toFixed(2)+'%':'',statusLabel[r.status]||r.status);
+    return row;
+  };
+
+  const addSheet=(name,filter)=>{
+    const data=filter?allResults.filter(r=>r.status===filter):allResults;
+    const ws=XLSX.utils.aoa_to_sheet([hdr,...data.map(makeRow)]);
+    XLSX.utils.book_append_sheet(wb,ws,name);
+  };
+
+  addSheet('All Records',null);
+  addSheet('Matched','matched');
+  addSheet('Near Match (Tolerance)','near');
+  addSheet('Amount Mismatch','diff');
+  addSheet('Only in SOA','soa-only');
+  addSheet('Only in Ledger','led-only');
+
+  XLSX.writeFile(wb,'vendor_reconciliation.xlsx');
+}
+</script>
+</body>
+</html>
